@@ -67,14 +67,20 @@ def readGEFlow(args):
             print(colored.cyan("Reading the Magnitude files."))
            
         if folderNumber == 1:
+            if args.segmentation:
+                break
             folderPath = PathFlowDataRL
             print(colored.cyan("Reading the flow files (R/L)."))
            
         if folderNumber == 2:
+            if args.segmentation:
+                break
             folderPath = PathFlowDataAP
             print(colored.cyan("Reading the flow files (A/P)."))
             
         if folderNumber == 3:
+            if args.segmentation:
+                break
             folderPath = PathFlowDataSI
             print(colored.cyan("Reading the flow files (S/I)."))
            
@@ -128,41 +134,51 @@ def readGEFlow(args):
                 #print(flowData.shape)
 
 
-    
-    ### The combination of +x +y and -z and permuted x and y is working. Ali Aug24 2017
-    UOrg = args.velocitysign[0] * (flowData[:, :, :, args.velocityorder[0]].squeeze())
-    VOrg = args.velocitysign[1] * (flowData[:, :, :, args.velocityorder[1]].squeeze())
-    WOrg = args.velocitysign[2] * (flowData[:, :, :, args.velocityorder[2]].squeeze())
-    
-    flowCorrected = numpy.zeros([flowData.shape[0], flowData.shape[1], flowData.shape[2],3,flowData.shape[4]])
-    
-      
-    if args.eddycurrent:
-        flowCorrected = eddyCurrentCorrection(UOrg, VOrg, WOrg, args.randomnoise, args.eddythreshold, args.eddyplane)
+    if args.segmentation is False:
+        ### The combination of +x +y and -z and permuted x and y is working. Ali Aug24 2017
+        UOrg = args.velocitysign[0] * (flowData[:, :, :, args.velocityorder[0]].squeeze())
+        VOrg = args.velocitysign[1] * (flowData[:, :, :, args.velocityorder[1]].squeeze())
+        WOrg = args.velocitysign[2] * (flowData[:, :, :, args.velocityorder[2]].squeeze())
+        
+        flowCorrected = numpy.zeros([flowData.shape[0], flowData.shape[1], flowData.shape[2],3,flowData.shape[4]])
+        
+          
+        if args.eddycurrent:
+            flowCorrected = eddyCurrentCorrection(UOrg, VOrg, WOrg, args.randomnoise, args.eddythreshold, args.eddyplane)
+            
+            
+        else:
+            flowCorrected[:, :, :,0, :] = UOrg
+            flowCorrected[:, :, :,1, :] = VOrg
+            flowCorrected[:, :, :,2, :] = WOrg
+            
         
         
-    else:
-        flowCorrected[:, :, :,0, :] = UOrg
-        flowCorrected[:, :, :,1, :] = VOrg
-        flowCorrected[:, :, :,2, :] = WOrg
         
-    
-    
-    
     print(colored.green("\nGetting ready to write files... This takes a little bit of time"))
     
     magSize = magDataTemp.shape
     totalNodes = magSize[0] * magSize[1] * magSize[2]
-    if args.vtk and args.mat is False:
-        print(colored.yellow("We will not save any file since you didnt select your preference. (VTK or MAT)"))
+
+    if (args.vtk == False and args.mat == False):
+        print(colored.yellow("We will not save any file since you didnt select your preference! (VTK or MAT)"))
+        
     
     if args.vtk:
-        saveVTK(magDataTemp, flowCorrected,pixel_spc, totalNodes, args.output)
-    
+        if args.segmentation:
+            saveVTKSeg(magDataTemp,pixel_spc, totalNodes, args.output)
+        else:
+            saveVTK(magDataTemp, flowCorrected,pixel_spc, totalNodes, args.output)
+    numpy.save(args.output +"/FlowData", magDataTemp)
     if args.mat:
-        with open(outPath + "/FlowData.mat", 'wb') as matlabFile:
-            scipy.io.savemat(matlabFile, mdict={'velocity': flowData})
-            scipy.io.savemat(matlabFile, mdict={'magnitude': magDataTemp})
+        if args.segmentation:
+            with open(args.output + "/FlowData.mat", 'wb') as matlabFile:
+                scipy.io.savemat(matlabFile, mdict={'magnitude': magDataTemp})
+            
+        else:
+            with open(args.output + "/FlowData.mat", 'wb') as matlabFile:
+                scipy.io.savemat(matlabFile, mdict={'velocity': flowData})
+                scipy.io.savemat(matlabFile, mdict={'magnitude': magDataTemp})
     
     
     
@@ -327,6 +343,42 @@ def saveVTK(magDataTemp, flowCorrected,pixel_spc, totalNodes, outPath):
         
             writer = vtk.vtkXMLImageDataWriter()
             writer.SetFileName(outPath + '/FlowData_%d.vti' % timeIter)
+            writer.SetInputData(img_vtk)
+            ## This is set so we can see the data in a text editor.
+            writer.SetDataModeToAscii()
+            writer.Write()      
+
+def saveVTKSeg(magDataTemp,pixel_spc, totalNodes, outPath):
+        
+        
+            #   magData = numpy_support.numpy_to_vtk(num_array=magDataTemp.ravel(order='F'), deep=True, array_type=vtk.VTK_DOUBLE)
+            #   flowDataInVTK = numpy_support.numpy_to_vtk(num_array=flowData[:,:,:,:,timeIter].ravel(order='F'), deep=True, array_type=vtk.VTK_DOUBLE)
+        
+            magDataOut = numpy.reshape(magDataTemp, (totalNodes, 1), order='F')
+        
+        
+        #        #########################
+        #        # Convert the VTK array to vtkImageData
+        
+            img_vtk = vtk.vtkImageData()
+            img_vtk.SetDimensions(magDataTemp.shape)
+            img_vtk.SetSpacing(pixel_spc)
+            img_vtk.SetOrigin(0,0,0)
+    
+        
+            magArray = vtk.vtkDoubleArray()
+            magArray.SetNumberOfComponents(1)
+            magArray.SetNumberOfTuples(img_vtk.GetNumberOfPoints())
+            magArray.SetName("Magnitude")
+    
+            for i in range(0,totalNodes):
+                magArray.SetValue(i,magDataOut[i])
+        
+        
+            img_vtk.GetPointData().AddArray(magArray)
+                
+            writer = vtk.vtkXMLImageDataWriter()
+            writer.SetFileName(outPath + '/MagData.vti')
             writer.SetInputData(img_vtk)
             ## This is set so we can see the data in a text editor.
             writer.SetDataModeToAscii()
