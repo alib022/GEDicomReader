@@ -72,6 +72,13 @@ def readPatientInfo(FolderPath):
                 
             # Get ref file
     RefDs = dicom.read_file(lstFilesDCM[0])
+    print(colored.yellow("**"*100))
+    print(colored.yellow("\t\tGE 4D Flow DICOM reader. \n \t\t Developed by: Ali Bakhshinejad \n \t\t bakhshi3@uwm.edu"))
+    print(colored.yellow("**"*100))
+    
+    
+    
+    
     print(colored.blue("\t Patient ID: " + RefDs.PatientID ))
     print(colored.blue("\t Manufacturer Name: " + RefDs.Manufacturer ))
     #print("M: " + RefDs.SoftwareVersion )
@@ -114,13 +121,13 @@ def main():
     parser.add_argument("-se", "--segmentation",  action="store_true", help="Only save magnitude file to be used for segmentation purposes.")
 
     args = parser.parse_args()
-
+    
 
     if args.input is None:
         print(colored.red("FatalError: Input location is missing."))
         sys.exit()
     else:
-        print(colored.green("We are looking to read data from: "))
+        #print(colored.green("We are looking to read data from: "))
         readPatientInfo(args.input)
 
     if args.velocityorder is None:
@@ -145,6 +152,9 @@ def main():
 
     if args.randomnoise is None:
         args.randomnoise = 60
+
+    
+    
    
     #print(args)
     RefDs =  readGEFlow(args)
