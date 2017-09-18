@@ -346,7 +346,9 @@ def saveVTK(magDataTemp, flowCorrected,pixel_spc, totalNodes, outPath):
             writer.SetInputData(img_vtk)
             ## This is set so we can see the data in a text editor.
             writer.SetDataModeToAscii()
-            writer.Write()      
+            writer.Write()
+
+            return 0
 
 def saveVTKSeg(magDataTemp,pixel_spc, totalNodes, outPath):
         
