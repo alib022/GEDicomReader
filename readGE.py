@@ -1,6 +1,7 @@
-import dicom,os, glob, scipy.io, numpy, vtk, sys, datetime, argparse
+import dicom,os, glob, scipy.io, numpy, vtk, sys, datetime, argparse, timeit
 from clint.textui import colored
 from readGEFlow import readGEFlow
+
 ''' This function reads GE Flow data '''
 
 
@@ -72,13 +73,13 @@ def readPatientInfo(FolderPath):
                 
             # Get ref file
     RefDs = dicom.read_file(lstFilesDCM[0])
-    print(colored.yellow("**"*100))
-    print(colored.yellow("\t\tGE 4D Flow DICOM reader. \n \t\t Developed by: Ali Bakhshinejad \n \t\t bakhshi3@uwm.edu"))
-    print(colored.yellow("**"*100))
+    print(colored.yellow("\t"+"**"*20))
+    print(colored.yellow("\t\tGE 4D Flow DICOM reader. \n\t\tDeveloped by: Ali Bakhshinejad \n\t\tali.bakhshinejad@gmail.com"))
+    print(colored.yellow("\t"+"**"*20))
     
     
     
-    
+    print(colored.green("Reading data for case:"))
     print(colored.blue("\t Patient ID: " + RefDs.PatientID ))
     print(colored.blue("\t Manufacturer Name: " + RefDs.Manufacturer ))
     #print("M: " + RefDs.SoftwareVersion )
@@ -105,6 +106,8 @@ def printReport(outPath, RefDs):
     f.close() 
     
 def main():
+
+    start_time = timeit.default_timer()
 
     parser = argparse.ArgumentParser(description="GE 4D Flow DICOM reader developed by Ali Bakhshinejad. contact: ali.bakhshinejad@gmail.com")
 
@@ -159,8 +162,9 @@ def main():
     #print(args)
     RefDs =  readGEFlow(args)
     printReport(args.output, RefDs)
-
-    print(colored.magenta("Done!"))
+    # code you want to evaluate
+    elapsed = timeit.default_timer() - start_time
+    print(colored.yellow("Execuation time: " + str(elapsed)+ " s \nDone!"))
     
     
 main()

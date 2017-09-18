@@ -1,5 +1,6 @@
 import dicom,os, glob, scipy.io, numpy, vtk, sys, datetime, argparse
 from clint.textui import colored
+from vtk.util import numpy_support
 
 
 
@@ -169,6 +170,7 @@ def readGEFlow(args):
             saveVTKSeg(magDataTemp,pixel_spc, totalNodes, args.output)
         else:
             saveVTK(magDataTemp, flowCorrected,pixel_spc, totalNodes, args.output)
+    
     numpy.save(args.output +"/FlowData", magDataTemp)
     if args.mat:
         if args.segmentation:
@@ -297,8 +299,6 @@ def eddyCurrentCorrection(UOrg, VOrg, WOrg, randNoiseThreshold, eddyCurrentThres
         flowCorrected[:, :, :,1, k] = VOrg[:, :, :, k] - plainV
         flowCorrected[:, :, :,2, k] = WOrg[:, :, :, k] - plainW
     
-    #flowCorrected[noiseMask] = 0
-    print("After Eddy correction")
     
     return flowCorrected
  
@@ -354,32 +354,51 @@ def saveVTKSeg(magDataTemp,pixel_spc, totalNodes, outPath):
             #   magData = numpy_support.numpy_to_vtk(num_array=magDataTemp.ravel(order='F'), deep=True, array_type=vtk.VTK_DOUBLE)
             #   flowDataInVTK = numpy_support.numpy_to_vtk(num_array=flowData[:,:,:,:,timeIter].ravel(order='F'), deep=True, array_type=vtk.VTK_DOUBLE)
         
-            magDataOut = numpy.reshape(magDataTemp, (totalNodes, 1), order='F')
-        
+ #           magDataOut = numpy.reshape(magDataTemp, (totalNodes, 1), order='F')
+            MagVTK = numpy_support.numpy_to_vtk(num_array=magDataTemp.ravel(order='F'), deep=True, array_type=vtk.VTK_DOUBLE)
+                    
+            #        #########################
+            #        # Convert the VTK array to vtkImageData
+            img_vtk = vtk.vtkImageData()
+            img_vtk.SetDimensions(magDataTemp.shape)
+            img_vtk.AllocateScalars(vtk.VTK_FLOAT,1)
+            img_vtk.SetSpacing(pixel_spc)
+            img_vtk.SetOrigin(0,0,0)
+            img_vtk.GetPointData().SetScalars(MagVTK)        
         
         #        #########################
         #        # Convert the VTK array to vtkImageData
         
-            img_vtk = vtk.vtkImageData()
-            img_vtk.SetDimensions(magDataTemp.shape)
-            img_vtk.SetSpacing(pixel_spc)
-            img_vtk.SetOrigin(0,0,0)
+ #           img_vtk = vtk.vtkImageData()
+#            img_vtk.SetDimensions(magDataTemp.shape)
+#            img_vtk.SetSpacing(pixel_spc)
+#            img_vtk.SetOrigin(0,0,0)
+
+#            dims = imageData.GetDimensions()
+ 
+            # Fill every entry of the image data with "2.0"
+#            for z in range(dims[2]):
+#                for y in range(dims[1]):
+#                    for x in range(dims[0]):
+#                        img_vtk.SetScalarComponentFromDouble(x, y, z, 0, 2.0)
+#            for i in range(0,totalNodes):
+#                 img_vtk.SetValue(i,magDataOut[i])
+        
+
+        
+ #           magArray = vtk.vtkDoubleArray()
+#            magArray.SetNumberOfComponents(1)
+#            magArray.SetNumberOfTuples(img_vtk.GetNumberOfPoints())
+#            magArray.SetName("Magnitude")
     
-        
-            magArray = vtk.vtkDoubleArray()
-            magArray.SetNumberOfComponents(1)
-            magArray.SetNumberOfTuples(img_vtk.GetNumberOfPoints())
-            magArray.SetName("Magnitude")
-    
-            for i in range(0,totalNodes):
-                magArray.SetValue(i,magDataOut[i])
-        
-        
-            img_vtk.GetPointData().AddArray(magArray)
+                    
+#            img_vtk.GetPointData().AddArray(magArray)
                 
             writer = vtk.vtkXMLImageDataWriter()
             writer.SetFileName(outPath + '/MagData.vti')
             writer.SetInputData(img_vtk)
             ## This is set so we can see the data in a text editor.
             writer.SetDataModeToAscii()
-            writer.Write()      
+            writer.Write()
+
+            return 0
