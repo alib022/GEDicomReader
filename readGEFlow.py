@@ -255,16 +255,19 @@ def readGEFlow(args):
     totalNodes = magSize[0] * magSize[1] * magSize[2]
 
     if (args.vtk == False and args.mat == False):
-        print(colored.yellow("We will not save any file since you didnt select your preference! (VTK or MAT)"))
+        print(colored.yellow("We will ONLY save in npy format, since you didnt select your preference! (VTK or MAT)"))
         
     
+    numpy.save(args.output +"/FlowData", flowCorrected)    
     if args.vtk:
         if args.segmentation:
+            
             saveVTKSeg(magDataTemp,False, pixel_spc, totalNodes, args.output)
         else:
+            
             saveVTK(magDataTemp, flowCorrected,pixel_spc, totalNodes, args.output)
     
-    numpy.save(args.output +"/FlowData", magDataTemp)
+    
     if args.mat:
         if args.segmentation:
             with open(args.output + "/FlowData.mat", 'wb') as matlabFile:
@@ -441,7 +444,7 @@ def saveVTK(magDataTemp, flowCorrected,pixel_spc, totalNodes, outPath):
             writer.SetDataModeToAscii()
             writer.Write()
 
-            return 0
+        
 
 def saveVTKSeg(magDataTemp, cMRA, pixel_spc, totalNodes, outPath):
         

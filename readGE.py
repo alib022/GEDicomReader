@@ -127,7 +127,7 @@ def main():
     parser.add_argument("-se", "--segmentation",  action="store_true", help="Only save magnitude file to be used for segmentation purposes.")
 
     parser.add_argument("--cmra", action="store_true", help="Read cMRA dataset, (No Flow Data).")
-    parser.add_argument("--flow", action="store_true", help="Read 4D flow database.")
+   # parser.add_argument("--flow", action="store_true", help="Read 4D flow database.")
 
     args = parser.parse_args()
     
@@ -172,7 +172,7 @@ def main():
     if args.cmra:
         RefDs = readGEcMRA(args)
 
-    if (args.flow or args.segmentation):
+    else:
         RefDs =  readGEFlow(args)
 
     printReport(args.output, RefDs)
