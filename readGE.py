@@ -115,7 +115,7 @@ def main():
     parser.add_argument("-v", "--velocityorder", help="The order of reading velocity files, default value is [1,0,2] which reresents [y,x,z]")
     parser.add_argument("-si", "--velocitysign", help="Sign for each velocity component, default value is [1,1,-1]")
     parser.add_argument("-e", "--eddycurrent", action="store_true", help="Activating Eddy current correction function")
-    parser.add_argument("-p", "--eddyplane", type=int, help="The plane order to fit on the static tissue. Currently we support 1st and second order (value: 1 or 2)")
+    parser.add_argument("-p", "--eddyplane", type=int, help="The plane order to fit on the static tissue. Currently we support 1st and second order (value: 1 or 2). Default value is 2nd order polynominal.")
     parser.add_argument("-t", "--eddythreshold", type=int, help="The threshold value to generate static tissue mask (default value is standard deviation less than 20)")
     parser.add_argument("-n", "--randomnoise", type=int, help="Threshold for random noise correction.(Default is 60)")
     parser.add_argument("-ol", "--output", help="Output location")
@@ -155,6 +155,9 @@ def main():
 
     if args.randomnoise is None:
         args.randomnoise = 60
+
+    if (args.eddycurrent and args.eddyplane is None):
+        args.eddyplane = 2
 
     
     
