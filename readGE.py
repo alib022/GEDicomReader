@@ -1,6 +1,6 @@
 import dicom,os, glob, scipy.io, numpy, vtk, sys, datetime, argparse, timeit
 from clint.textui import colored
-from readGEFlow import readGEFlow
+from readGEFlow import readGEFlow, readGEcMRA
 
 ''' This function reads GE Flow data '''
 
@@ -8,7 +8,7 @@ from readGEFlow import readGEFlow
         
 
 
-def readPatientInfo(FolderPath):
+def readPatientInfo(FolderPath, cmra):
     
     MagPathStr = str(FolderPath)
     foldersList = [os.path.join(MagPathStr,o) for o in os.listdir(MagPathStr) if os.path.isdir(os.path.join(MagPathStr,o))]
@@ -59,7 +59,10 @@ def readPatientInfo(FolderPath):
 
 
     flowData = None 
-    folderPath = PathFlowDataMAG
+    if cmra:
+        folderPath = FolderPath
+    else:
+        folderPath = PathFlowDataMAG
            
     lstFilesDCM = []
           
@@ -92,14 +95,14 @@ def printReport(outPath, RefDs):
     dXY = RefDs.PixelSpacing
     dZ = RefDs.SpacingBetweenSlices
     pixel_spc = (dXY[0],dXY[1],dZ)
-    f = open(outPath + "/readMe",'w')
-    f.write('This is the report for reading GE produced DICOM files. \n In case any problems contact: ali.bakhshinejad@gmail.com \n Produced at' + str(today))
-    f.write('--'*20)
+    f = open(outPath + "/readMe.txt",'w')
+    f.write('This is the report for reading GE produced DICOM files. \n In case any problems contact: ali.bakhshinejad@gmail.com \n Produced at ' + str(today))
+    f.write('\n' + '--'*20)
     f.write('\n Patient information')
     f.write('\n Patient Name: ' + RefDs.PatientName)
     f.write('\n Patient ID: ' + RefDs.PatientID)
     f.write('\n Patient Position: ' + RefDs.PatientPosition)
-    f.write('--'*5)
+    f.write('\n'+'--'*5)
     f.write('\n Image information:')
   #  f.write('\n Image Orientation Position: ' + RefDs.ImageOrientationPosition)
     f.write('\n Resolution: ' + str(pixel_spc))
@@ -123,6 +126,9 @@ def main():
     parser.add_argument("--mat", action="store_true", help="save in MAT format")
     parser.add_argument("-se", "--segmentation",  action="store_true", help="Only save magnitude file to be used for segmentation purposes.")
 
+    parser.add_argument("--cmra", action="store_true", help="Read cMRA dataset, (No Flow Data).")
+    parser.add_argument("--flow", action="store_true", help="Read 4D flow database.")
+
     args = parser.parse_args()
     
 
@@ -131,7 +137,7 @@ def main():
         sys.exit()
     else:
         #print(colored.green("We are looking to read data from: "))
-        readPatientInfo(args.input)
+        readPatientInfo(args.input, args.cmra)
 
     if args.velocityorder is None:
         args.velocityorder = numpy.array([1,0,2])
@@ -163,7 +169,12 @@ def main():
     
    
     #print(args)
-    RefDs =  readGEFlow(args)
+    if args.cmra:
+        RefDs = readGEcMRA(args)
+
+    if (args.flow or args.segmentation):
+        RefDs =  readGEFlow(args)
+
     printReport(args.output, RefDs)
     # code you want to evaluate
     elapsed = timeit.default_timer() - start_time
