@@ -1,6 +1,6 @@
 import dicom,os, glob, scipy.io, numpy, vtk, sys, datetime, argparse, timeit
 from clint.textui import colored
-from readGEFlow import readGEFlow, readGEcMRA
+from readGEFlow import readGEFlow, readGEcMRA, readGETOF
 
 ''' This function reads GE Flow data '''
 
@@ -8,7 +8,7 @@ from readGEFlow import readGEFlow, readGEcMRA
         
 
 
-def readPatientInfo(FolderPath, cmra):
+def readPatientInfo(FolderPath, cmra, tof):
     
     MagPathStr = str(FolderPath)
     foldersList = [os.path.join(MagPathStr,o) for o in os.listdir(MagPathStr) if os.path.isdir(os.path.join(MagPathStr,o))]
@@ -17,9 +17,7 @@ def readPatientInfo(FolderPath, cmra):
         filesListTEMP = glob.glob(MagPathStr + "/*") 
             
         ds = dicom.read_file(filesListTEMP[0])
-        if "GE" in ds.Manufacturer: 
-                print("It's GE sequence!")
-        else:
+        if not "GE" in ds.Manufacturer: 
                 print("We currently can not load files from " + ds.Manufacturer + ".")
                 sys.exit()
     else:
@@ -59,7 +57,7 @@ def readPatientInfo(FolderPath, cmra):
 
 
     flowData = None 
-    if cmra:
+    if (cmra or tof):
         folderPath = FolderPath
     else:
         folderPath = PathFlowDataMAG
@@ -92,6 +90,7 @@ def readPatientInfo(FolderPath, cmra):
 def printReport(outPath, RefDs):
     # file-output.py
     today = datetime.date.today()
+
     dXY = RefDs.PixelSpacing
     dZ = RefDs.SpacingBetweenSlices
     pixel_spc = (dXY[0],dXY[1],dZ)
@@ -127,7 +126,7 @@ def main():
     parser.add_argument("-se", "--segmentation",  action="store_true", help="Only save magnitude file to be used for segmentation purposes.")
 
     parser.add_argument("--cmra", action="store_true", help="Read cMRA dataset, (No Flow Data).")
-   # parser.add_argument("--flow", action="store_true", help="Read 4D flow database.")
+    parser.add_argument("--tof", action="store_true", help="Read Time Of Flght (TOF) database.")
 
     args = parser.parse_args()
     
@@ -137,7 +136,7 @@ def main():
         sys.exit()
     else:
         #print(colored.green("We are looking to read data from: "))
-        readPatientInfo(args.input, args.cmra)
+        readPatientInfo(args.input, args.cmra, args.tof)
 
     if args.velocityorder is None:
         args.velocityorder = numpy.array([1,0,2])
@@ -172,6 +171,8 @@ def main():
     if args.cmra:
         RefDs = readGEcMRA(args)
 
+    elif args.tof:
+        RefDs = readGETOF(args)
     else:
         RefDs =  readGEFlow(args)
 
