@@ -349,12 +349,12 @@ def readGEFlow(args):
     if (args.vtk == False and args.mat == False):
         print(colored.yellow("We will ONLY save in npy format, since you didnt select your preference! (VTK or MAT)"))
         
-    
-    numpy.save(args.output +"/FlowData", flowCorrected)    
+    if not args.segmentation:
+        numpy.save(args.output +"/FlowData", flowCorrected)    
     if args.vtk:
         if args.segmentation:
             
-            saveVTKSeg(magDataTemp,False, pixel_spc, totalNodes, args.output)
+            saveVTKSeg(magDataTemp,False,False, pixel_spc, totalNodes, args.output)
         else:
             
             saveVTK(magDataTemp, flowCorrected,pixel_spc, totalNodes, args.output)
