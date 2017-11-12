@@ -306,7 +306,8 @@ def readGEFlow(args):
                 magDataTemp = ReadData.mean(3)
                 if args.mat:
                     scipy.io.savemat(args.output + "/mag.mat", mdict={'magDataTemp': magDataTemp})
-
+                numpy.save(args.output +"/mag", magDataTemp) 
+                
         else:
                 if flowData is None:
                     ConstFlowPixelDims = (int(RefDs.Rows), int(RefDs.Columns), int(RefDs.ImagesInAcquisition), 3, int(ds.CardiacNumberOfImages))
@@ -331,6 +332,9 @@ def readGEFlow(args):
           
         if args.eddycurrent:
             flowCorrected = eddyCurrentCorrection(UOrg, VOrg, WOrg, args.randomnoise, args.eddythreshold, args.eddyplane)
+
+        elif args.randomnoise is not None:
+            flowCorrected = randNoise(args, UOrg, VOrg, WOrg, args.randomnoise/100, 0, 1)
             
             
         else:
@@ -599,3 +603,49 @@ def saveVTKSeg(magDataTemp, cMRA,TOF, pixel_spc, totalNodes, outPath):
             writer.Write()
 
             return 0
+
+def randNoise(args, UOrg, VOrg, WOrg, randThre, load=1, save=0):
+
+    SDU = stdWindow(UOrg, 5)
+    SDV = stdWindow(VOrg, 5)
+    SDW = stdWindow(WOrg, 5)
+    if save:
+       numpy.save(args.output + '/SDU', SDU)
+       numpy.save(args.output + '/SDV', SDV)        
+       numpy.save(args.output + '/SDW', SDW)
+            
+
+    
+    flowCorrected = numpy.zeros([UOrg.shape[0], UOrg.shape[1], UOrg.shape[2],3,UOrg.shape[3]])
+
+
+    UOrg[numpy.where(SDU > randThre*numpy.max(SDU))] = 0
+    VOrg[numpy.where(SDV > randThre*numpy.max(SDV))] = 0
+    WOrg[numpy.where(SDW > randThre*numpy.max(SDW))] = 0
+
+    flowCorrected[:,:,:,0] = UOrg
+    flowCorrected[:,:,:,1] = VOrg
+    flowCorrected[:,:,:,2] = WOrg
+
+    return flowCorrected
+
+def stdWindow(UInput, WW=5):
+    UShape = UInput.shape
+    print(UShape)
+    maskNoise = numpy.zeros([UShape[0], UShape[1], UShape[2]], dtype=bool)
+    SD = numpy.zeros((UShape[0]-WW+1, UShape[1]-WW+1,UShape[2], UShape[3]))
+    for kIter in range(UShape[2]):
+        print(kIter)
+        Mean = numpy.zeros((UShape[0]-WW+1, UShape[1]-WW+1, UShape[3]))
+        
+        for iIter in range(WW):
+            for jIter in range(WW):
+                Mean += UInput[iIter:UShape[0]-WW+1+iIter, jIter:UShape[1]-WW+1+jIter, kIter]
+                SD[:,:,kIter] += UInput[iIter:UShape[0]-WW+1+iIter, jIter:UShape[1]-WW+1+jIter, kIter]**2 
+        
+        Mean /= WW**2
+        SD[:,:,kIter] = numpy.sqrt(SD[:,:,kIter]/WW**2 - Mean**2)
+    
+    
+    return SD
+

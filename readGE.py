@@ -98,12 +98,12 @@ def printReport(outPath, RefDs):
     f.write('This is the report for reading GE produced DICOM files. \n In case any problems contact: ali.bakhshinejad@gmail.com \n Produced at ' + str(today))
     f.write('\n' + '--'*20)
     f.write('\n Patient information')
-    f.write('\n Patient Name: ' + RefDs.PatientName)
+ #   f.write('\n Patient Name: ' + RefDs.PatientName)
     f.write('\n Patient ID: ' + RefDs.PatientID)
     f.write('\n Patient Position: ' + RefDs.PatientPosition)
     f.write('\n'+'--'*5)
     f.write('\n Image information:')
-  #  f.write('\n Image Orientation Position: ' + RefDs.ImageOrientationPosition)
+ #   f.write('\n Image Orientation Position: ' + RefDs.ImageOrientationPosition)
     f.write('\n Resolution: ' + str(pixel_spc))
     f.close() 
     
@@ -119,7 +119,7 @@ def main():
     parser.add_argument("-e", "--eddycurrent", action="store_true", help="Activating Eddy current correction function")
     parser.add_argument("-p", "--eddyplane", type=int, help="The plane order to fit on the static tissue. Currently we support 1st and second order (value: 1 or 2). Default value is 2nd order polynominal.")
     parser.add_argument("-t", "--eddythreshold", type=int, help="The threshold value to generate static tissue mask (default value is standard deviation less than 20)")
-    parser.add_argument("-n", "--randomnoise", type=int, help="Threshold for random noise correction.(Default is 60)")
+    parser.add_argument("-n", "--randomnoise", help="Threshold for random noise correction. (In percentage)")
     parser.add_argument("-ol", "--output", help="Output location")
     parser.add_argument("--vtk", action="store_true", help="save in VTK format")
     parser.add_argument("--mat", action="store_true", help="save in MAT format")
@@ -159,7 +159,8 @@ def main():
         args.eddythreshold = 20
 
     if args.randomnoise is None:
-        args.randomnoise = 60
+        print(colored.yellow("Warning: No random noise correction will happen!"))
+
 
     if (args.eddycurrent and args.eddyplane is None):
         args.eddyplane = 2
