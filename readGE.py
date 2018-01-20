@@ -1,110 +1,37 @@
-import dicom,os, glob, scipy.io, numpy, vtk, sys, datetime, argparse, timeit
+import dicom,os, glob, scipy.io, numpy, vtk, sys, datetime, argparse, timeit, math
 from clint.textui import colored
+from DICOMClasses import PatientData
 from readGEFlow import readGEFlow, readGEcMRA, readGETOF
+from GEReadPatientInfo import readPatientInfo
 
 ''' This function reads GE Flow data '''
 
-
-        
-
-
-def readPatientInfo(FolderPath, cmra, tof):
-    
-    MagPathStr = str(FolderPath)
-    foldersList = [os.path.join(MagPathStr,o) for o in os.listdir(MagPathStr) if os.path.isdir(os.path.join(MagPathStr,o))]
-        
-    if not foldersList:
-        filesListTEMP = glob.glob(MagPathStr + "/*") 
-            
-        ds = dicom.read_file(filesListTEMP[0])
-        if not "GE" in ds.Manufacturer: 
-                print("We currently can not load files from " + ds.Manufacturer + ".")
-                sys.exit()
-    else:
-            
-                for dirName in foldersList:
-                    filesListTEMP = glob.glob(dirName + "/*") 
-                    
-                    ds = dicom.read_file(filesListTEMP[0])
-                    if "GE" in ds.Manufacturer:
-                        proceed = True
-                        if 100 <= int(ds.SeriesNumber) <= 199:
-                            PathFlowDataMAG = dirName
-                            
-                        if 200 <= int(ds.SeriesNumber) <= 299:
-                            PathFlowDataRL = dirName
-                            
-                            ConstDimsTemp = (int(ds.Rows), int(ds.Columns), int(ds.ImagesInAcquisition), int(ds.CardiacNumberOfImages))
-                            dXY = ds.PixelSpacing
-                            dZ = ds.SpacingBetweenSlices
-                            pixel_spc = (dXY[0],dXY[1],dZ)
-                            #print(pixel_spc)
-                        if 300 <= int(ds.SeriesNumber) <= 399:
-                            PathFlowDataAP = dirName
-                            
-                        if 400 <= int(ds.SeriesNumber) <= 499:
-                            PathFlowDataSI = dirName
-                            
-                            
-                    else:
-                        proceed = False
-                        print("We currently can not load files from " + ds.Manufacturer + ".")
-                        sys.exit()
-          
-    MagPathStr = str(FolderPath)
-    PathList=MagPathStr.split("/")
-    basePath = MagPathStr.replace(PathList[-1],"")
-
-
-    flowData = None 
-    if (cmra or tof):
-        folderPath = FolderPath
-    else:
-        folderPath = PathFlowDataMAG
-           
-    lstFilesDCM = []
-          
-            ################## Reading time of flight files
-            # listing magnitude files
-    for dirName, subdirList, fileList in os.walk( folderPath + "/"):
-        for filename in fileList:
-            # if ".dcm" in filename.lower():  # check whether the file's DICOM
-            lstFilesDCM.append(os.path.join(dirName,filename))
-                
-                
-            # Get ref file
-    RefDs = dicom.read_file(lstFilesDCM[0])
-    print(colored.yellow("\t"+"**"*20))
-    print(colored.yellow("\t\tGE 4D Flow DICOM reader. \n\t\tDeveloped by: Ali Bakhshinejad \n\t\tali.bakhshinejad@gmail.com"))
-    print(colored.yellow("\t"+"**"*20))
-    
-    
-    
-    print(colored.green("Reading data for case:"))
-    print(colored.blue("\t Patient ID: " + RefDs.PatientID ))
-    print(colored.blue("\t Manufacturer Name: " + RefDs.Manufacturer ))
-    #print("M: " + RefDs.SoftwareVersion )
-            
-        
-
-def printReport(outPath, RefDs):
+def printReport(outPath, PatientDataStruc, Version):
     # file-output.py
     today = datetime.date.today()
 
-    dXY = RefDs.PixelSpacing
-    dZ = RefDs.SpacingBetweenSlices
-    pixel_spc = (dXY[0],dXY[1],dZ)
+ 
     f = open(outPath + "/readMe.txt",'w')
-    f.write('This is the report for reading GE produced DICOM files. \n In case any problems contact: ali.bakhshinejad@gmail.com \n Produced at ' + str(today))
-    f.write('\n' + '--'*20)
-    f.write('\n Patient information')
+
+    f.write("\n\t"+"**"*20)
+    f.write("\n\t\tGE 4D Flow DICOM reader. \n\t\tDeveloped by: Ali Bakhshinejad \n\t\tali.bakhshinejad@gmail.com \n\t\t Version="+ Version)
+    f.write("\n\t"+"**"*20)
+    
+    f.write("\nReading data for case:")
+    f.write("\n\t Patient ID: " + PatientDataStruc.PatientID )
+    f.write("\n\t Manufacturer Name: " + PatientDataStruc.Manufacturer )
+ 
+
+ #   f.write('This is the report for reading GE produced DICOM files. \n In case any problems contact: ali.bakhshinejad@gmail.com \n Produced at ' + str(today))
+#    f.write('\n' + '--'*20)
+#    f.write('\n Patient information')
  #   f.write('\n Patient Name: ' + RefDs.PatientName)
-    f.write('\n Patient ID: ' + RefDs.PatientID)
-    f.write('\n Patient Position: ' + RefDs.PatientPosition)
-    f.write('\n'+'--'*5)
-    f.write('\n Image information:')
+#    f.write('\n Patient ID: ' + RefDs.PatientID)
+#    f.write('\n Patient Position: ' + RefDs.PatientPosition)
+#    f.write('\n'+'--'*5)
+    f.write('\nImage information:')
  #   f.write('\n Image Orientation Position: ' + RefDs.ImageOrientationPosition)
-    f.write('\n Resolution: ' + str(pixel_spc))
+    f.write("\n\t Scan resolution: " + str(PatientDataStruc.PixelSize) )
     f.close() 
     
 def main():
@@ -128,56 +55,56 @@ def main():
     parser.add_argument("--cmra", action="store_true", help="Read cMRA dataset, (No Flow Data).")
     parser.add_argument("--tof", action="store_true", help="Read Time Of Flght (TOF) database.")
 
-    args = parser.parse_args()
+    inputFlags = parser.parse_args()
     
 
-    if args.input is None:
+    if inputFlags.input is None:
         print(colored.red("FatalError: Input location is missing."))
         sys.exit()
     else:
         #print(colored.green("We are looking to read data from: "))
-        readPatientInfo(args.input, args.cmra, args.tof)
+        PatientDataStruc, Version = readPatientInfo(inputFlags.input, inputFlags.cmra, inputFlags.tof)
 
-    if args.velocityorder is None:
-        args.velocityorder = numpy.array([1,0,2])
+    if inputFlags.velocityorder is None:
+        inputFlags.velocityorder = numpy.array([1,0,2])
     else:
-        args.velocityorder = numpy.array(args.velocityorder)
+        inputFlags.velocityorder = numpy.array(inputFlags.velocityorder)
 
-    if args.velocitysign is None:
-        args.velocitysign = numpy.array([1,1,-1])
+    if inputFlags.velocitysign is None:
+        inputFlags.velocitysign = numpy.array([1,1,-1])
     else:
-        args.velocitysign = numpy.array(args.velocitysign)
+        inputFlags.velocitysign = numpy.array(inputFlags.velocitysign)
 
-    if args.output is None:
+    if inputFlags.output is None:
         print(colored.red("FatalError: output location is missing."))
         sys.exit()
     else:
-        if not os.path.exists(args.output):
-            os.makedirs(args.output)
+        if not os.path.exists(inputFlags.output):
+            os.makedirs(inputFlags.output)
 
-    if args.eddythreshold is None:
-        args.eddythreshold = 20
+    if inputFlags.eddythreshold is None:
+        inputFlags.eddythreshold = 20
 
-    if args.randomnoise is None:
+    if inputFlags.randomnoise is None:
         print(colored.yellow("Warning: No random noise correction will happen!"))
 
 
-    if (args.eddycurrent and args.eddyplane is None):
-        args.eddyplane = 2
+    if (inputFlags.eddycurrent and inputFlags.eddyplane is None):
+        inputFlags.eddyplane = 2
 
     
     
    
     #print(args)
-    if args.cmra:
-        RefDs = readGEcMRA(args)
+    if inputFlags.cmra:
+        readGEcMRA(inputFlags, PatientDataStruc)
 
-    elif args.tof:
-        RefDs = readGETOF(args)
+    elif inputFlags.tof:
+        readGETOF(inputFlags, PatientDataStruc)
     else:
-        RefDs =  readGEFlow(args)
+        readGEFlow(inputFlags, PatientDataStruc)
 
-    printReport(args.output, RefDs)
+    printReport(inputFlags.output, PatientDataStruc, Version)
     # code you want to evaluate
     elapsed = timeit.default_timer() - start_time
     print(colored.yellow("Execuation time: " + str(elapsed)+ " s \nDone!"))

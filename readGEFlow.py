@@ -1,8 +1,8 @@
-import dicom,os, glob, scipy.io, numpy, vtk, sys, datetime, argparse
+import dicom,os, glob, scipy.io, numpy, vtk, sys, datetime, argparse, math
 from clint.textui import colored
 from vtk.util import numpy_support
 
-def readGETOF(args):
+def readGETOF(args, PatientDataStruc):
           
     print( colored.green("\nLooking for TOF data... \n"))
     MagPathStr = args.input
@@ -12,6 +12,8 @@ def readGETOF(args):
     filesListTEMP = glob.glob(MagPathStr + "/*") 
     ds = dicom.read_file(filesListTEMP[0])
     ConstDimsTemp = (int(ds.Rows), int(ds.Columns), int(ds.ImagesInAcquisition), int(ds.CardiacNumberOfImages))
+ #   ConstDimsTemp = (int(ds.Rows), int(ds.Columns), int(math.ceil(len(filesListTEMP)/ int(ds.CardiacNumberOfImages))), int(ds.CardiacNumberOfImages))
+
     dXY = ds.PixelSpacing
     dZ = ds.SpacingBetweenSlices
     pixel_spc = (dXY[0],dXY[1],dZ)
@@ -57,7 +59,7 @@ def readGETOF(args):
        
 
             
-        ConstPixelDims = (int(RefDs.Rows), int(RefDs.Columns), int(len(sliceLocationTemp)))
+        ConstPixelDims = (int(RefDs.Rows), int(RefDs.Columns),math.ceil(len(filesListTEMP)/ int(ds.CardiacNumberOfImages)))
         ReadData = numpy.zeros(ConstPixelDims, dtype=numpy.double)
 
         for iFile in lstFilesDCM:
@@ -93,9 +95,9 @@ def readGETOF(args):
         
     
     
-    return RefDs
+ #   return RefDs
  #   printReport(outPath, RefDs)
-def readGEcMRA(args):
+def readGEcMRA(args, PatientDataStruc):
           
     print( colored.green("\nLooking for cMRA data... \n"))
     MagPathStr = args.input
@@ -151,6 +153,7 @@ def readGEcMRA(args):
 
             
         ConstPixelDims = (int(RefDs.Rows), int(RefDs.Columns), int(len(sliceLocationTemp)), int(len(triggerTimeTemp)))
+        print(ConstPixelDims)
         ReadData = numpy.zeros(ConstPixelDims, dtype=numpy.double)
 
         for iFile in lstFilesDCM:
@@ -186,88 +189,44 @@ def readGEcMRA(args):
         
     
     
-    return RefDs
+ #   return RefDs
  #   printReport(outPath, RefDs)
 
-def readGEFlow(args):
+def readGEFlow(inputFlags, PatientDataStruc):
           
     print( colored.green("\nLooking for flow data... \n"))
-    MagPathStr = args.input
-    foldersList = [os.path.join(MagPathStr,o) for o in os.listdir(MagPathStr) if os.path.isdir(os.path.join(MagPathStr,o))]
-        
-    if not foldersList:
-        filesListTEMP = glob.glob(MagPathStr + "/*") 
-            
-        ds = dicom.read_file(filesListTEMP[0])
-        if "GE" in ds.Manufacturer: 
-                print("It's GE sequence!")
-        else:
-                print("We currently can not load files from " + ds.Manufacturer + ".")
-    else:
-            
-                for dirName in foldersList:
-                    filesListTEMP = glob.glob(dirName + "/*") 
-                    
-                    ds = dicom.read_file(filesListTEMP[0])
-                    if "GE" in ds.Manufacturer:
-                        
-                        proceed = True
-                        if 100 <= int(ds.SeriesNumber) <= 199:
-                            PathFlowDataMAG = dirName
-                            print(colored.cyan("Mag folder is: " + PathFlowDataMAG))
-                        if 200 <= int(ds.SeriesNumber) <= 299:
-                            PathFlowDataRL = dirName
-                            print(colored.cyan("R/L folder is: " + PathFlowDataRL))
-                            ConstDimsTemp = (int(ds.Rows), int(ds.Columns), int(ds.ImagesInAcquisition), int(ds.CardiacNumberOfImages))
-                            dXY = ds.PixelSpacing
-                            dZ = ds.SpacingBetweenSlices
-                            pixel_spc = (dXY[0],dXY[1],dZ)
-                            #print(pixel_spc)
-                        if 300 <= int(ds.SeriesNumber) <= 399:
-                            PathFlowDataAP = dirName
-                            print(colored.cyan("A/P folder is: " + PathFlowDataAP))
-                        if 400 <= int(ds.SeriesNumber) <= 499:
-                            PathFlowDataSI = dirName
-                            print(colored.cyan("S/I folder is: " + PathFlowDataSI))
+    print(colored.cyan("Mag folder is: " + PatientDataStruc.MagPath))
+    print(colored.cyan("R/L folder is: " + PatientDataStruc.FlowPathRL))
+    print(colored.cyan("A/P folder is: " + PatientDataStruc.FlowPathAP))
+    print(colored.cyan("S/I folder is: " + PatientDataStruc.FlowPathSI))
                             
-                    else:
-                        proceed = False
-                        print(colored.red("FatalError: We currently can not load files from " + ds.Manufacturer + "."))
-                        sys.exit()
-          
- #   MagPathStr = str(FolderPath)
-    PathList=MagPathStr.split("/")
-    basePath = MagPathStr.replace(PathList[-1],"")
 
-
-    if proceed:
-      flowData = None 
-      for folderNumber in range(0,4):
+    for folderNumber in range(0,4):
         sliceLocation = []
         # flow files list
         lstFilesDCM = []
         triggerTime = []
             
         if folderNumber == 0:
-            folderPath = PathFlowDataMAG
+            folderPath = PatientDataStruc.MagPath
             print(colored.cyan("Reading the Magnitude files."))
            
         if folderNumber == 1:
-            if args.segmentation:
+            if inputFlags.segmentation:
                 break
-            folderPath = PathFlowDataRL
+            folderPath = PatientDataStruc.FlowPathRL
             print(colored.cyan("Reading the flow files (R/L)."))
            
         if folderNumber == 2:
-            if args.segmentation:
+            if inputFlags.segmentation:
                 break
-            folderPath = PathFlowDataAP
+            folderPath = PatientDataStruc.FlowPathAP
             print(colored.cyan("Reading the flow files (A/P)."))
             
         if folderNumber == 3:
-            if args.segmentation:
+            if inputFlags.segmentation:
                 break
-            folderPath = PathFlowDataSI
+            folderPath = PatientDataStruc.FlowPathSI
             print(colored.cyan("Reading the flow files (S/I)."))
            
             
@@ -296,45 +255,46 @@ def readGEFlow(args):
 
             
         if folderNumber == 0:
-                ConstPixelDims = (int(RefDs.Rows), int(RefDs.Columns), int(RefDs.ImagesInAcquisition), int(ds.CardiacNumberOfImages))
-                ReadData = numpy.zeros(ConstPixelDims, dtype=numpy.double)
+                #ConstPixelDims = (int(RefDs.Rows), int(RefDs.Columns),66, int(ds.CardiacNumberOfImages))
+                #print(ConstPixelDims)
+                ReadData = numpy.zeros(PatientDataStruc.MagVecSize, dtype=numpy.double)
 
                 for iFile in lstFilesDCM:
                     dsTemp = dicom.read_file (iFile)
                     ReadData[:,:,sliceLocationTemp.index(dsTemp.SliceLocation),triggerTimeTemp.index(dsTemp.TriggerTime)]= dsTemp.pixel_array.astype('float')
                     
                 magDataTemp = ReadData.mean(3)
-                if args.mat:
-                    scipy.io.savemat(args.output + "/mag.mat", mdict={'magDataTemp': magDataTemp})
-                numpy.save(args.output +"/mag", magDataTemp) 
+                if inputFlags.mat:
+                    scipy.io.savemat(inputFlags.output + "/mag.mat", mdict={'magDataTemp': magDataTemp})
+ #               numpy.save(args.output +"/mag", magDataTemp) 
                 
         else:
-                if flowData is None:
-                    ConstFlowPixelDims = (int(RefDs.Rows), int(RefDs.Columns), int(RefDs.ImagesInAcquisition), 3, int(ds.CardiacNumberOfImages))
-                    flowData = numpy.zeros(ConstFlowPixelDims, dtype=numpy.double)
+                if folderNumber == 1:
+ #                   ConstFlowPixelDims = (int(RefDs.Rows), int(RefDs.Columns), 66, 3, int(ds.CardiacNumberOfImages))
+                    flowData = numpy.zeros(PatientDataStruc.FlowVecSize, dtype=numpy.double)
                 for iFile in lstFilesDCM:
                     dsTemp = dicom.read_file (iFile)        
                     flowData[:,:,sliceLocationTemp.index(dsTemp.SliceLocation), folderNumber-1,triggerTimeTemp.index(dsTemp.TriggerTime)]= dsTemp.pixel_array.astype('float')
     
-                if args.mat:
-                    scipy.io.savemat(args.output + "/vel.mat", mdict={'flowData': flowData})
+                if inputFlags.mat:
+                    scipy.io.savemat(inputFlags.output + "/vel.mat", mdict={'flowData': flowData})
                 #print(flowData.shape)
 
 
-    if args.segmentation is False:
+    if inputFlags.segmentation is False:
         ### The combination of +x +y and -z and permuted x and y is working. Ali Aug24 2017
-        UOrg = args.velocitysign[0] * (flowData[:, :, :, args.velocityorder[0]].squeeze())
-        VOrg = args.velocitysign[1] * (flowData[:, :, :, args.velocityorder[1]].squeeze())
-        WOrg = args.velocitysign[2] * (flowData[:, :, :, args.velocityorder[2]].squeeze())
+        UOrg = inputFlags.velocitysign[0] * (flowData[:, :, :, args.velocityorder[0]].squeeze())
+        VOrg = inputFlags.velocitysign[1] * (flowData[:, :, :, args.velocityorder[1]].squeeze())
+        WOrg = inputFlags.velocitysign[2] * (flowData[:, :, :, args.velocityorder[2]].squeeze())
         
         flowCorrected = numpy.zeros([flowData.shape[0], flowData.shape[1], flowData.shape[2],3,flowData.shape[4]])
         
           
-        if args.eddycurrent:
-            flowCorrected = eddyCurrentCorrection(UOrg, VOrg, WOrg, args.randomnoise, args.eddythreshold, args.eddyplane)
+        if inputFlags.eddycurrent:
+            flowCorrected = eddyCurrentCorrection(UOrg, VOrg, WOrg, inputFlags.randomnoise, inputFlags.eddythreshold, inputFlags.eddyplane)
 
-        elif args.randomnoise is not None:
-            flowCorrected = randNoise(args, UOrg, VOrg, WOrg, args.randomnoise/100, 0, 1)
+        elif inputFlags.randomnoise is not None:
+            flowCorrected = randNoise(inputFlags, UOrg, VOrg, WOrg, inputFlags.randomnoise/100, 0, 1)
             
             
         else:
@@ -350,33 +310,33 @@ def readGEFlow(args):
     magSize = magDataTemp.shape
     totalNodes = magSize[0] * magSize[1] * magSize[2]
 
-    if (args.vtk == False and args.mat == False):
+    if (inputFlags.vtk == False and inputFlags.mat == False):
         print(colored.yellow("We will ONLY save in npy format, since you didnt select your preference! (VTK or MAT)"))
         
-    if not args.segmentation:
-        numpy.save(args.output +"/FlowData", flowCorrected)    
-    if args.vtk:
-        if args.segmentation:
+    if not inputFlags.segmentation:
+        numpy.save(inputFlags.output +"/FlowData", flowCorrected)    
+    if inputFlags.vtk:
+        if inputFlags.segmentation:
             
-            saveVTKSeg(magDataTemp,False,False, pixel_spc, totalNodes, args.output)
+            saveVTKSeg(magDataTemp,False,False, PatientDataStruc.PixelSize, totalNodes, inputFlags.output)
         else:
             
-            saveVTK(magDataTemp, flowCorrected,pixel_spc, totalNodes, args.output)
+            saveVTK(magDataTemp, flowCorrected,  PatientDataStruc.PixelSize, totalNodes, inputFlags.output)
     
     
-    if args.mat:
-        if args.segmentation:
-            with open(args.output + "/FlowData.mat", 'wb') as matlabFile:
+    if inputFlags.mat:
+        if inputFlags.segmentation:
+            with open(inputFlags.output + "/FlowData.mat", 'wb') as matlabFile:
                 scipy.io.savemat(matlabFile, mdict={'magnitude': magDataTemp})
             
         else:
-            with open(args.output + "/FlowData.mat", 'wb') as matlabFile:
+            with open(inputFlags.output + "/FlowData.mat", 'wb') as matlabFile:
                 scipy.io.savemat(matlabFile, mdict={'velocity': flowData})
                 scipy.io.savemat(matlabFile, mdict={'magnitude': magDataTemp})
     
     
     
-    return RefDs
+ #   return RefDs
  #   printReport(outPath, RefDs)
 
 def eddyCurrentCorrection(UOrg, VOrg, WOrg, randNoiseThreshold, eddyCurrentThreshold, eddyOrder):
