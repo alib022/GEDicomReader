@@ -84,6 +84,7 @@ def readGEFlow(inputFlags, PatientDataStruc):
                 if folderNumber == 1:
  #                   ConstFlowPixelDims = (int(RefDs.Rows), int(RefDs.Columns), 66, 3, int(ds.CardiacNumberOfImages))
                     flowData = numpy.zeros(PatientDataStruc.FlowVecSize, dtype=numpy.double)
+ #                   print(PatientDataStruc.FlowVecSize)
                 for iFile in lstFilesDCM:
                     dsTemp = dicom.read_file (iFile)        
                     flowData[:,:,sliceLocationTemp.index(dsTemp.SliceLocation), folderNumber-1,triggerTimeTemp.index(dsTemp.TriggerTime)]= dsTemp.pixel_array.astype('float')

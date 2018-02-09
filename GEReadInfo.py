@@ -42,6 +42,7 @@ def main(foldersList):
 
                 PatientDataStruc.FlowPathRL = dirName                               
                 PatientDataStruc.MagVecSize = (int(ds.Rows), int(ds.Columns), int(ds.ImagesInAcquisition), int(ds.CardiacNumberOfImages))
+                PatientDataStruc.FlowVecSize = (int(ds.Rows), int(ds.Columns), int(math.ceil(len(filesListTEMP)/ int(ds.CardiacNumberOfImages))), 3, int(ds.CardiacNumberOfImages))
                 dXY = ds.PixelSpacing
                 dZ = ds.SpacingBetweenSlices
                 PatientDataStruc.PixelSize = (dXY[0],dXY[1],dZ)
