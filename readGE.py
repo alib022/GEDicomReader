@@ -1,38 +1,9 @@
-import dicom,os, glob, scipy.io, numpy, vtk, sys, datetime, argparse, timeit, math
+import dicom,os, glob, scipy.io, numpy, vtk, sys, argparse, timeit, math, printReport, readGEFlow, readGEMRA
 from clint.textui import colored
 from DICOMClasses import PatientData
-from readGEFlow import readGEFlow, readGEcMRA, readGETOF
 from GEReadPatientInfo import readPatientInfo
 
 ''' This function reads GE Flow data '''
-
-def printReport(outPath, PatientDataStruc, Version):
-    # file-output.py
-    today = datetime.date.today()
-
- 
-    f = open(outPath + "/readMe.txt",'w')
-
-    f.write("\n\t"+"**"*20)
-    f.write("\n\t\tGE 4D Flow DICOM reader. \n\t\tDeveloped by: Ali Bakhshinejad \n\t\tali.bakhshinejad@gmail.com \n\t\t Version="+ Version)
-    f.write("\n\t"+"**"*20)
-    
-    f.write("\nReading data for case:")
-    f.write("\n\t Patient ID: " + PatientDataStruc.PatientID )
-    f.write("\n\t Manufacturer Name: " + PatientDataStruc.Manufacturer )
- 
-
- #   f.write('This is the report for reading GE produced DICOM files. \n In case any problems contact: ali.bakhshinejad@gmail.com \n Produced at ' + str(today))
-#    f.write('\n' + '--'*20)
-#    f.write('\n Patient information')
- #   f.write('\n Patient Name: ' + RefDs.PatientName)
-#    f.write('\n Patient ID: ' + RefDs.PatientID)
-#    f.write('\n Patient Position: ' + RefDs.PatientPosition)
-#    f.write('\n'+'--'*5)
-    f.write('\nImage information:')
- #   f.write('\n Image Orientation Position: ' + RefDs.ImageOrientationPosition)
-    f.write("\n\t Scan resolution: " + str(PatientDataStruc.PixelSize) )
-    f.close() 
     
 def main():
 
@@ -62,7 +33,6 @@ def main():
         print(colored.red("FatalError: Input location is missing."))
         sys.exit()
     else:
-        #print(colored.green("We are looking to read data from: "))
         PatientDataStruc, Version = readPatientInfo(inputFlags.input, inputFlags.cmra, inputFlags.tof)
 
     if inputFlags.velocityorder is None:
@@ -71,7 +41,7 @@ def main():
         inputFlags.velocityorder = numpy.array(inputFlags.velocityorder)
 
     if inputFlags.velocitysign is None:
-        inputFlags.velocitysign = numpy.array([1,1,-1])
+        inputFlags.velocitysign = numpy.array([-1,1,-1])
     else:
         inputFlags.velocitysign = numpy.array(inputFlags.velocitysign)
 
@@ -92,19 +62,24 @@ def main():
     if (inputFlags.eddycurrent and inputFlags.eddyplane is None):
         inputFlags.eddyplane = 2
 
-    
-    
-   
-    #print(args)
     if inputFlags.cmra:
-        readGEcMRA(inputFlags, PatientDataStruc)
+        readGEMRA.readGEcMRA(inputFlags, PatientDataStruc)
 
     elif inputFlags.tof:
-        readGETOF(inputFlags, PatientDataStruc)
+        readGEMRA.readGETOF(inputFlags, PatientDataStruc)
     else:
-        readGEFlow(inputFlags, PatientDataStruc)
+        readGEFlow.readGEFlow(inputFlags, PatientDataStruc)
 
-    printReport(inputFlags.output, PatientDataStruc, Version)
+    if inputFlags.segmentation:
+        printReport.printReport(inputFlags.output, PatientDataStruc, Version, "seg")
+    elif inputFlags.tof:
+        printReport.printReport(inputFlags.output, PatientDataStruc, Version, "tof")
+    elif inputFlags.cmra:
+        printReport.printReport(inputFlags.output, PatientDataStruc, Version, "cMRA")
+    else:
+        printReport.printReport(inputFlags.output, PatientDataStruc, Version, "flow")
+
+
     # code you want to evaluate
     elapsed = timeit.default_timer() - start_time
     print(colored.yellow("Execuation time: " + str(elapsed)+ " s \nDone!"))

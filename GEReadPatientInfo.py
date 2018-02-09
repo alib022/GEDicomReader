@@ -1,4 +1,4 @@
-import dicom,os, glob, scipy.io, numpy, vtk, sys, datetime, argparse, timeit, math, DICOMClasses, GEReadInfo
+import dicom,os, glob, sys, GEReadInfo
 from clint.textui import colored
 
 
