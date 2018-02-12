@@ -117,7 +117,8 @@ def readGEFlow(inputFlags, PatientDataStruc):
             flowCorrected[:, :, :,2, :] = WOrg
             
         
-        vTemp = flowCorrected.mean(4)
+        vTemp = numpy.amax(flowCorrected, axis=4)
+        #flowCorrected.mean(4)
         vTemp2 = numpy.sqrt(vTemp[:,:,:,0]**2 + vTemp[:,:,:,1]**2+ vTemp[:,:,:,2]**2)
         vCMRA = numpy.multiply(vTemp2, magDataTemp)
         
@@ -138,7 +139,7 @@ def readGEFlow(inputFlags, PatientDataStruc):
             
         else:
             
-            saveVTK.saveVTK(magDataTemp, flowCorrected,  PatientDataStruc.PixelSize, totalNodes, inputFlags.output)
+            saveVTK.saveVTK(vCMRA, flowCorrected,  PatientDataStruc.PixelSize, totalNodes, inputFlags.output)
             saveVTK.saveVTKSeg(vCMRA,True,False, PatientDataStruc.PixelSize, totalNodes, inputFlags.output)
     
     
