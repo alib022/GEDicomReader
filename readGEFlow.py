@@ -1,4 +1,4 @@
-import dicom,os, glob, scipy.io, numpy, vtk, sys, saveVTK
+import dicom,os, glob, scipy.io, numpy, vtk, sys, saveVTK, math
 from clint.textui import colored
 from vtk.util import numpy_support
 
@@ -101,6 +101,9 @@ def readGEFlow(inputFlags, PatientDataStruc):
         WOrg = inputFlags.velocitysign[2] * (flowData[:, :, :, inputFlags.velocityorder[2]].squeeze())
         
         flowCorrected = numpy.zeros([flowData.shape[0], flowData.shape[1], flowData.shape[2],3,flowData.shape[4]])
+        vTemp = flowCorrected.mean(4)
+        vTemp2 = numpy.sqrt(vTemp[:,:,:,0]**2 + vTemp[:,:,:,1]**2+ vTemp[:,:,:,2]**2)
+        vCMRA = numpy.multiply(vTemp2, magDataTemp)
         
           
         if inputFlags.eddycurrent:
@@ -132,9 +135,11 @@ def readGEFlow(inputFlags, PatientDataStruc):
         if inputFlags.segmentation:
             
             saveVTK.saveVTKSeg(magDataTemp,False,False, PatientDataStruc.PixelSize, totalNodes, inputFlags.output)
+            
         else:
             
             saveVTK.saveVTK(magDataTemp, flowCorrected,  PatientDataStruc.PixelSize, totalNodes, inputFlags.output)
+            saveVTK.saveVTKSeg(vCMRA,True,False, PatientDataStruc.PixelSize, totalNodes, inputFlags.output)
     
     
     if inputFlags.mat:
