@@ -101,9 +101,7 @@ def readGEFlow(inputFlags, PatientDataStruc):
         WOrg = inputFlags.velocitysign[2] * (flowData[:, :, :, inputFlags.velocityorder[2]].squeeze())
         
         flowCorrected = numpy.zeros([flowData.shape[0], flowData.shape[1], flowData.shape[2],3,flowData.shape[4]])
-        vTemp = flowCorrected.mean(4)
-        vTemp2 = numpy.sqrt(vTemp[:,:,:,0]**2 + vTemp[:,:,:,1]**2+ vTemp[:,:,:,2]**2)
-        vCMRA = numpy.multiply(vTemp2, magDataTemp)
+
         
           
         if inputFlags.eddycurrent:
@@ -119,7 +117,9 @@ def readGEFlow(inputFlags, PatientDataStruc):
             flowCorrected[:, :, :,2, :] = WOrg
             
         
-        
+        vTemp = flowCorrected.mean(4)
+        vTemp2 = numpy.sqrt(vTemp[:,:,:,0]**2 + vTemp[:,:,:,1]**2+ vTemp[:,:,:,2]**2)
+        vCMRA = numpy.multiply(vTemp2, magDataTemp)
         
     print(colored.green("\nGetting ready to write files... This takes a little bit of time"))
     
