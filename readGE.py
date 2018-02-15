@@ -41,7 +41,7 @@ def main():
         inputFlags.velocityorder = numpy.array(inputFlags.velocityorder)
 
     if inputFlags.velocitysign is None:
-        inputFlags.velocitysign = numpy.array([-1,1,-1])
+        inputFlags.velocitysign = numpy.array([1,1,-1])
     else:
         inputFlags.velocitysign = numpy.array(inputFlags.velocitysign)
 
