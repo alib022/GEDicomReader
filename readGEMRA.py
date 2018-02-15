@@ -1,4 +1,4 @@
-import dicom,os, glob, scipy.io, numpy, vtk, sys, datetime, argparse, math
+import dicom,os, glob, scipy.io, numpy, vtk, sys, datetime, argparse, math, saveVTK
 from clint.textui import colored
 from vtk.util import numpy_support
 
@@ -58,8 +58,12 @@ def readGETOF(args, PatientDataStruc):
 
        
 
-            
-        ConstPixelDims = (int(RefDs.Rows), int(RefDs.Columns),math.ceil(len(filesListTEMP)/ int(ds.CardiacNumberOfImages)))
+        
+        if int(RefDs.CardiacNumberOfImages) == 0:
+            ConstPixelDims = (int(RefDs.Rows), int(RefDs.Columns), len(filesListTEMP))
+        else:
+            ConstPixelDims = (int(RefDs.Rows), int(RefDs.Columns),math.ceil(len(filesListTEMP)/ int(RefDs.CardiacNumberOfImages)))
+        
         ReadData = numpy.zeros(ConstPixelDims, dtype=numpy.double)
 
         for iFile in lstFilesDCM:
@@ -86,7 +90,7 @@ def readGETOF(args, PatientDataStruc):
     
     if args.vtk:
         
-        saveVTKSeg(magDataTemp, False,True, pixel_spc, totalNodes, args.output)
+        saveVTK.saveVTKSeg(magDataTemp, False,True, pixel_spc, totalNodes, args.output)
         
     if args.mat:
         with open(args.output + "/TOFData.mat", 'wb') as matlabFile:

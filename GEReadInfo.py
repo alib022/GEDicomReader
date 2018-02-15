@@ -2,8 +2,21 @@ import math, dicom, glob, DICOMClasses
 
 
 def main(foldersList):
+   
 
     PatientDataStruc = DICOMClasses.PatientData()
+
+    for dirName in foldersList:
+        filesListTEMP = glob.glob(dirName + "/*") 
+                    
+        ds = dicom.read_file(filesListTEMP[0])
+        GESoftwareVersion = int(ds.SoftwareVersions[0])
+
+        if GESoftwareVersion == 27:
+
+            if  int(ds.SeriesNumber) % 100 == 0:
+                PatientDataStruc.MagPath = dirName
+                seriesBase = int(ds.SeriesNumber)
 
     for dirName in foldersList:
 
@@ -13,6 +26,7 @@ def main(foldersList):
         GESoftwareVersion = int(ds.SoftwareVersions[0])
 
         if GESoftwareVersion == 27:
+
 
             if  int(ds.SeriesNumber) % 100 == 0:
                 PatientDataStruc.MagPath = dirName
