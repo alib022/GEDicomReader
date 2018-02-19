@@ -1,4 +1,4 @@
-import dicom,os, glob, scipy.io, numpy, vtk, sys, saveVTK, math
+import dicom,os, glob, scipy.io, numpy, vtk, sys, saveVTK, math, eddyNoise
 from clint.textui import colored
 from vtk.util import numpy_support
 
@@ -105,10 +105,10 @@ def readGEFlow(inputFlags, PatientDataStruc):
         
           
         if inputFlags.eddycurrent:
-            flowCorrected = eddyCurrentCorrection(UOrg, VOrg, WOrg, inputFlags.randomnoise, inputFlags.eddythreshold, inputFlags.eddyplane)
+            flowCorrected = eddyNoise.eddyCurrentCorrection(UOrg, VOrg, WOrg, inputFlags.randomnoise, inputFlags.eddythreshold, inputFlags.eddyplane)
 
         elif inputFlags.randomnoise is not None:
-            flowCorrected = randNoise(inputFlags, UOrg, VOrg, WOrg, inputFlags.randomnoise/100, 0, 1)
+            flowCorrected = eddyNoise.randNoise(inputFlags, UOrg, VOrg, WOrg, int(inputFlags.randomnoise)/100, 0, 0)
             
             
         else:
@@ -129,9 +129,10 @@ def readGEFlow(inputFlags, PatientDataStruc):
 
     if (inputFlags.vtk == False and inputFlags.mat == False):
         print(colored.yellow("We will ONLY save in npy format, since you didnt select your preference! (VTK or MAT)"))
+        numpy.save(inputFlags.output +"/FlowData", flowCorrected)
         
-    if not inputFlags.segmentation:
-        numpy.save(inputFlags.output +"/FlowData", flowCorrected)    
+   # if not inputFlags.segmentation:
+   #     numpy.save(inputFlags.output +"/FlowData", flowCorrected)    
     if inputFlags.vtk:
         if inputFlags.segmentation:
             
@@ -141,6 +142,7 @@ def readGEFlow(inputFlags, PatientDataStruc):
             
             saveVTK.saveVTK(vCMRA, flowCorrected,  PatientDataStruc.PixelSize, totalNodes, inputFlags.output)
             saveVTK.saveVTKSeg(vCMRA,True,False, PatientDataStruc.PixelSize, totalNodes, inputFlags.output)
+            saveVTK.saveVTKSeg(magDataTemp,False,False, PatientDataStruc.PixelSize, totalNodes, inputFlags.output)
     
     
     if inputFlags.mat:

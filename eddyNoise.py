@@ -5,16 +5,16 @@ from vtk.util import numpy_support
 def eddyCurrentCorrection(UOrg, VOrg, WOrg, randNoiseThreshold, eddyCurrentThreshold, eddyOrder):
 
 
-    Ustd = numpy.std(UOrg, axis=3)
-    Vstd = numpy.std(VOrg, axis=3)
-    Wstd = numpy.std(WOrg, axis=3)
+    Ustd = stdWindow(UOrg, 5)
+    Vstd = stdWindow(VOrg, 5)
+    Wstd = stdWindow(WOrg, 5)
 
 
 
     #### Random noise correction
 
     #randNoiseThreshold = 60.0
-    noiseMask = numpy.logical_and(numpy.logical_and(Ustd > randNoiseThreshold, Vstd > randNoiseThreshold), Wstd > randNoiseThreshold)
+   # noiseMask = numpy.logical_and(numpy.logical_and(Ustd > randNoiseThreshold, Vstd > randNoiseThreshold), Wstd > randNoiseThreshold)
     #noiseMask[:, :cut.start] = False
     #noiseMask[:, cut.stop:] = False
 
@@ -132,9 +132,9 @@ def randNoise(args, UOrg, VOrg, WOrg, randThre, load=1, save=0):
     flowCorrected = numpy.zeros([UOrg.shape[0], UOrg.shape[1], UOrg.shape[2],3,UOrg.shape[3]])
 
 
-    UOrg[numpy.where(SDU > randThre*numpy.max(SDU))] = 0
-    VOrg[numpy.where(SDV > randThre*numpy.max(SDV))] = 0
-    WOrg[numpy.where(SDW > randThre*numpy.max(SDW))] = 0
+    UOrg[numpy.where(SDU < randThre*numpy.max(SDU))] = 0
+    VOrg[numpy.where(SDV < randThre*numpy.max(SDV))] = 0
+    WOrg[numpy.where(SDW < randThre*numpy.max(SDW))] = 0
 
     flowCorrected[:,:,:,0] = UOrg
     flowCorrected[:,:,:,1] = VOrg
@@ -144,11 +144,11 @@ def randNoise(args, UOrg, VOrg, WOrg, randThre, load=1, save=0):
 
 def stdWindow(UInput, WW=5):
     UShape = UInput.shape
-    print(UShape)
+    #print(UShape)
     maskNoise = numpy.zeros([UShape[0], UShape[1], UShape[2]], dtype=bool)
     SD = numpy.zeros((UShape[0]-WW+1, UShape[1]-WW+1,UShape[2], UShape[3]))
     for kIter in range(UShape[2]):
-        print(kIter)
+        #print(kIter)
         Mean = numpy.zeros((UShape[0]-WW+1, UShape[1]-WW+1, UShape[3]))
         
         for iIter in range(WW):
