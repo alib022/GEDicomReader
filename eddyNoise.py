@@ -7,32 +7,20 @@ from rolling_window import rolling_window
 
 import matplotlib.pyplot as plt
 
-def eddyCurrentCorrection(UOrg, VOrg, WOrg, randNoiseThreshold, eddyCurrentThreshold, eddyOrder):
+def eddyCurrentCorrection(UOrg, VOrg, WOrg, randNoiseThreshold=1, eddyCurrentThreshold=20, eddyOrder=1):
 
 
-    USTD = numpy.zeros(UOrg.shape)
-    VSTD = numpy.zeros(VOrg.shape)
-    WSTD = numpy.zeros(WOrg.shape)
+    USTD = numpy.zeros((UOrg.shape[0],UOrg.shape[1],UOrg.shape[2]))
+    VSTD = numpy.zeros(USTD.shape)
+    WSTD = numpy.zeros(USTD.shape)
     
 
-    for tIter in range(UOrg.shape[3]):
-        for kIter in range(UOrg.shape[2]):
-#            URoll = pandas.Series(UOrg[:,:,kIter,tIter])
-#            VRoll = pandas.Series(VOrg[:,:,kIter,tIter])
-#            WRoll = pandas.Series(WOrg[:,:,kIter,tIter])
-            
-#            USTD[:,:,kIter,tIter]= URoll.rolling(3, center=True, win_type='gaussian', min_periods=(3//2)).std().values
-#            VSTD[:,:,kIter,tIter]= VRoll.rolling(3, center=True, win_type='gaussian', min_periods=(3//2)).std().values
-#            WSTD[:,:,kIter,tIter]= WRoll.rolling(3, center=True, win_type='gaussian', min_periods=(3//2)).std().values
+    for kIter in range(UOrg.shape[2]):
 
-            USTD[:,:,kIter,tIter] = numpy.std(rolling_window(UOrg[:,:,kIter,tIter], 3), -1)
-            VSTD[:,:,kIter,tIter] = numpy.std(rolling_window(VOrg[:,:,kIter,tIter], 3), -1)
-            WSTD[:,:,kIter,tIter] = numpy.std(rolling_window(WOrg[:,:,kIter,tIter], 3), -1)
-    
+        USTD[1:(UOrg.shape[0]-1),1:(UOrg.shape[1]-1), kIter] = numpy.std(rolling_window(UOrg[:,:,kIter,:], (3,3,0), toend=False), axis=(4,3,1))
+        VSTD[1:(VOrg.shape[0]-1),1:(VOrg.shape[1]-1), kIter] = numpy.std(rolling_window(VOrg[:,:,kIter,:], (3,3,0), toend=False), axis=(4,3,1))
+        WSTD[1:(WOrg.shape[0]-1),1:(WOrg.shape[1]-1), kIter] = numpy.std(rolling_window(WOrg[:,:,kIter,:], (3,3,0), toend=False), axis=(4,3,1))
 
-    #USTD = numpy.std(rolling_window(UOrg, 3), -1)
-    #VSTD = numpy.std(rolling_window(VOrg, 3), -1)
-    #WSTD = numpy.std(rolling_window(WOrg, 3), -1)
     
     print("Ustd Max: ")
     print(USTD.max())
@@ -51,22 +39,30 @@ def eddyCurrentCorrection(UOrg, VOrg, WOrg, randNoiseThreshold, eddyCurrentThres
     print("USTD size: ")
     print(USTD.shape)
 
-    print(USTD[:,:,1,1])
+    print(USTD[:,:,15])
+
+
+    UOrgtest = UOrg[:,:,:,1]
+
+    UStaticIndecis = numpy.argwhere(USTD < (eddyCurrentThreshold*USTD.max()/100))
+ #   UStatic = numpy.zeros(UOrgtest.shape)
+#    UStatic = UOrgtest[USTD < (eddyCurrentThreshold*USTD.max()/100)]
+ #   eddyMaskIndicesV = numpy.where(VSTD < (eddyCurrentThreshold*VSTD.max()/100))
+#    eddyMaskIndicesW = numpy.where(WSTD < (eddyCurrentThreshold*WSTD.max()/100))
+
+    Utest = UOrgtest[UStaticIndecis]
 
     
-    
-
-    eddyMaskIndicesU = numpy.where(USTD < (eddyCurrentThreshold*USTD.max()/100))
-    eddyMaskIndicesV = numpy.where(VSTD < (eddyCurrentThreshold*VSTD.max()/100))
-    eddyMaskIndicesW = numpy.where(WSTD < (eddyCurrentThreshold*WSTD.max()/100))
-
-    print(eddyMaskIndicesU)
+ #   print(UOrgtest[eddyMaskIndicesU])
  
+#    UStatic = UOrgtest[eddyMaskIndicesU]
+
+    print(Utest.shape)
     
 
     f, (ax1, ax2) = plt.subplots(1, 2, sharey=True)
     ax1.imshow(UOrg[:,:,20,1])
-    ax2.imshow(eddyMaskIndicesU[:,:,20,1])
+    ax2.imshow(Utest[:,:,20])
     plt.show()
 
     
