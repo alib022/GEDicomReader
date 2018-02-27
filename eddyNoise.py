@@ -7,7 +7,7 @@ from rolling_window import rolling_window
 
 import matplotlib.pyplot as plt
 
-def eddyCurrentCorrection(UOrg, VOrg, WOrg, randNoiseThreshold=1, eddyCurrentThreshold=20, eddyOrder=1):
+def eddyCurrentCorrection(UOrg, VOrg, WOrg, randNoiseThreshold=1, eddyCurrentThreshold=12, eddyOrder=1):
 
 
     USTD = numpy.zeros((UOrg.shape[0],UOrg.shape[1],UOrg.shape[2]))
@@ -39,35 +39,36 @@ def eddyCurrentCorrection(UOrg, VOrg, WOrg, randNoiseThreshold=1, eddyCurrentThr
     print("USTD size: ")
     print(USTD.shape)
 
-    print(USTD[:,:,15])
+
+    UOrgtest = UOrg[:,:,:,1].copy()
+
+    UOrgtest[(USTD < (eddyCurrentThreshold*USTD.max()/100)) & (VSTD < (eddyCurrentThreshold*VSTD.max()/100) ) & (WSTD < (eddyCurrentThreshold*WSTD.max()/100))] = 0
 
 
-    UOrgtest = UOrg[:,:,:,1]
-
-    UStaticIndecis = numpy.argwhere(USTD < (eddyCurrentThreshold*USTD.max()/100))
- #   UStatic = numpy.zeros(UOrgtest.shape)
-#    UStatic = UOrgtest[USTD < (eddyCurrentThreshold*USTD.max()/100)]
- #   eddyMaskIndicesV = numpy.where(VSTD < (eddyCurrentThreshold*VSTD.max()/100))
-#    eddyMaskIndicesW = numpy.where(WSTD < (eddyCurrentThreshold*WSTD.max()/100))
-
-    Utest = UOrgtest[UStaticIndecis]
-
+    vmax = numpy.max([UOrg[:,:,20,1].max(), UOrgtest[:,:,20].max()])
+    vmin = numpy.min([UOrg[:,:,20,1].min(), UOrgtest[:,:,20].min()])
+    vmax = numpy.max([vmax, -vmin])
+    vmin = -vmax
     
- #   print(UOrgtest[eddyMaskIndicesU])
- 
-#    UStatic = UOrgtest[eddyMaskIndicesU]
+    for i in range(1,72):
+    # plot with various axes scales
+        plt.figure(i)
 
-    print(Utest.shape)
-    
+   
+        plt.subplot(121)
+        plt.imshow(UOrg[:,:,i,1], vmin=vmin, vmax=vmax, cmap='seismic')
+        plt.title('Org data')
 
-    f, (ax1, ax2) = plt.subplots(1, 2, sharey=True)
-    ax1.imshow(UOrg[:,:,20,1])
-    ax2.imshow(Utest[:,:,20])
-    plt.show()
 
-    
+       
+        plt.subplot(122)
+        plt.imshow(UOrgtest[:,:,i], vmin=vmin, vmax=vmax, cmap='seismic')
+        plt.title('static tissue')
+
+        plt.show()
+        
     sys.exit()
-   # print(eddyMaskIndicesU.shape)
+
 
     del Ustd, Vstd, Wstd  
     
@@ -152,28 +153,66 @@ def eddyCurrentCorrection(UOrg, VOrg, WOrg, randNoiseThreshold=1, eddyCurrentThr
     
     return flowCorrected
 
-def randNoise(args, UOrg, VOrg, WOrg, randThre, load=1, save=0):
+def randNoise(UOrg, VOrg, WOrg, randThre=25, plotBool=1):
 
-    SDU = stdWindow(UOrg, 5)
-    SDV = stdWindow(VOrg, 5)
-    SDW = stdWindow(WOrg, 5)
-    if save:
-       numpy.save(args.output + '/SDU', SDU)
-       numpy.save(args.output + '/SDV', SDV)        
-       numpy.save(args.output + '/SDW', SDW)
+    USTD = numpy.zeros((UOrg.shape[0],UOrg.shape[1],UOrg.shape[2]))
+    VSTD = numpy.zeros(USTD.shape)
+    WSTD = numpy.zeros(USTD.shape)
+    
+
+    for kIter in range(UOrg.shape[2]):
+
+        USTD[1:(UOrg.shape[0]-1),1:(UOrg.shape[1]-1), kIter] = numpy.std(rolling_window(UOrg[:,:,kIter,:], (3,3,0), toend=False), axis=(4,3,1))
+        VSTD[1:(VOrg.shape[0]-1),1:(VOrg.shape[1]-1), kIter] = numpy.std(rolling_window(VOrg[:,:,kIter,:], (3,3,0), toend=False), axis=(4,3,1))
+        WSTD[1:(WOrg.shape[0]-1),1:(WOrg.shape[1]-1), kIter] = numpy.std(rolling_window(WOrg[:,:,kIter,:], (3,3,0), toend=False), axis=(4,3,1))
+
+      
+   # UOrgtest = UOrg[:,:,:,1].copy()
+
+   # UOrgtest[(USTD > (randThre*USTD.max()/100)) & (VSTD > (randThre*VSTD.max()/100) ) & (WSTD > (randThre*WSTD.max()/100))] = 0
             
 
     
     flowCorrected = numpy.zeros([UOrg.shape[0], UOrg.shape[1], UOrg.shape[2],3,UOrg.shape[3]])
 
 
-    UOrg[numpy.where(SDU < randThre*numpy.max(SDU))] = 0
-    VOrg[numpy.where(SDV < randThre*numpy.max(SDV))] = 0
-    WOrg[numpy.where(SDW < randThre*numpy.max(SDW))] = 0
+    UOrg[(USTD > (randThre*USTD.max()/100)) & (VSTD > (randThre*VSTD.max()/100) ) & (WSTD > (randThre*WSTD.max()/100))] = 0
+    VOrg[(USTD > (randThre*USTD.max()/100)) & (VSTD > (randThre*VSTD.max()/100) ) & (WSTD > (randThre*WSTD.max()/100))] = 0
+    WOrg[(USTD > (randThre*USTD.max()/100)) & (VSTD > (randThre*VSTD.max()/100) ) & (WSTD > (randThre*WSTD.max()/100))] = 0
+
+
 
     flowCorrected[:,:,:,0] = UOrg
     flowCorrected[:,:,:,1] = VOrg
     flowCorrected[:,:,:,2] = WOrg
+
+    
+    if plotBool:
+        vmax = numpy.max([UOrg[:,:,20,1].max(), VOrg[:,:,20,1].max(), WOrg[:,:,20,1].max()])
+        vmin = numpy.min([UOrg[:,:,20,1].min(), VOrg[:,:,20,1].min(), WOrg[:,:,20,1].min()])
+        vmax = numpy.max([vmax, -vmin])
+        vmin = -vmax
+
+        # plot with various axes scales
+        plt.figure(1)
+
+       
+        plt.subplot(131)
+        plt.imshow(UOrg[:,:,20,1], vmin=vmin, vmax=vmax, cmap='seismic')
+        plt.title('U Org')
+
+
+       
+        plt.subplot(132)
+        plt.imshow(VOrg[:,:,20, 1], vmin=vmin, vmax=vmax, cmap='seismic')
+        plt.title('V Org')
+
+        plt.subplot(133)
+        plt.imshow(WOrg[:,:,20, 1], vmin=vmin, vmax=vmax, cmap='seismic')
+        plt.title('W Org')
+
+        plt.show()
+    
 
     return flowCorrected
 
