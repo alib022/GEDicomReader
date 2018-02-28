@@ -5,9 +5,11 @@ from scipy.ndimage.filters import uniform_filter
 from rolling_window import rolling_window
 
 
-import matplotlib.pyplot as plt
 
-def eddyCurrentCorrection(UOrg, VOrg, WOrg, randNoiseThreshold=1, eddyCurrentThreshold=12, eddyOrder=1):
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+
+def eddyCurrentCorrection(UOrg, VOrg, WOrg, randNoiseThreshold=1, eddyCurrentThreshold=12, eddyOrder=1, plotBool=0, verbous=0, plotEddyPlane=1):
 
 
     USTD = numpy.zeros((UOrg.shape[0],UOrg.shape[1],UOrg.shape[2]))
@@ -22,55 +24,63 @@ def eddyCurrentCorrection(UOrg, VOrg, WOrg, randNoiseThreshold=1, eddyCurrentThr
         WSTD[1:(WOrg.shape[0]-1),1:(WOrg.shape[1]-1), kIter] = numpy.std(rolling_window(WOrg[:,:,kIter,:], (3,3,0), toend=False), axis=(4,3,1))
 
     
-    print("Ustd Max: ")
-    print(USTD.max())
-    print("Vstd Max: ")
-    print(VSTD.max())
-    print("Wstd Max: ")
-    print(WSTD.max())
+    if verbous:    
+        print("Ustd Max: ")
+        print(USTD.max())
+        print("Vstd Max: ")
+        print(VSTD.max())
+        print("Wstd Max: ")
+        print(WSTD.max())
 
-    print("Ustd Min: ")
-    print(USTD.min())
-    print("Vstd Min: ")
-    print(VSTD.min())
-    print("Wstd Min: ")
-    print(WSTD.min())
+        print("Ustd Min: ")
+        print(USTD.min())
+        print("Vstd Min: ")
+        print(VSTD.min())
+        print("Wstd Min: ")
+        print(WSTD.min())
 
-    print("USTD size: ")
-    print(USTD.shape)
-
-
-    UOrgtest = UOrg[:,:,:,1].copy()
-
-    UOrgtest[(USTD < (eddyCurrentThreshold*USTD.max()/100)) & (VSTD < (eddyCurrentThreshold*VSTD.max()/100) ) & (WSTD < (eddyCurrentThreshold*WSTD.max()/100))] = 0
+        print("USTD size: ")
+        print(USTD.shape)
 
 
-    vmax = numpy.max([UOrg[:,:,20,1].max(), UOrgtest[:,:,20].max()])
-    vmin = numpy.min([UOrg[:,:,20,1].min(), UOrgtest[:,:,20].min()])
-    vmax = numpy.max([vmax, -vmin])
-    vmin = -vmax
     
-    for i in range(1,72):
-    # plot with various axes scales
-        plt.figure(i)
 
-   
-        plt.subplot(121)
-        plt.imshow(UOrg[:,:,i,1], vmin=vmin, vmax=vmax, cmap='seismic')
-        plt.title('Org data')
+    staticTissueU = UOrg[:,:,:,-1].copy()
+    staticTissueV = VOrg[:,:,:,-1].copy()
+    staticTissueW = WOrg[:,:,:,-1].copy()
 
+    staticTissueU[(USTD < (eddyCurrentThreshold*USTD.max()/100)) & (VSTD < (eddyCurrentThreshold*VSTD.max()/100) ) & (WSTD < (eddyCurrentThreshold*WSTD.max()/100))] = 0
+    staticTissueV[(USTD < (eddyCurrentThreshold*USTD.max()/100)) & (VSTD < (eddyCurrentThreshold*VSTD.max()/100) ) & (WSTD < (eddyCurrentThreshold*WSTD.max()/100))] = 0
+    staticTissueW[(USTD < (eddyCurrentThreshold*USTD.max()/100)) & (VSTD < (eddyCurrentThreshold*VSTD.max()/100) ) & (WSTD < (eddyCurrentThreshold*WSTD.max()/100))] = 0
+
+    print(staticTissueU.shape)
+    
+    if plotBool:    
+
+        vmax = numpy.max([UOrg[:,:,20,1].max(), staticTissueU[:,:,20].max()])
+        vmin = numpy.min([UOrg[:,:,20,1].min(), staticTissueU[:,:,20].min()])
+        vmax = numpy.max([vmax, -vmin])
+        vmin = -vmax
+    
+        for i in range(1,72):
+        # plot with various axes scales
+            plt.figure(i)
 
        
-        plt.subplot(122)
-        plt.imshow(UOrgtest[:,:,i], vmin=vmin, vmax=vmax, cmap='seismic')
-        plt.title('static tissue')
-
-        plt.show()
-        
-    sys.exit()
+            plt.subplot(121)
+            plt.imshow(UOrg[:,:,i,1], vmin=vmin, vmax=vmax, cmap='seismic')
+            plt.title('Org data')
 
 
-    del Ustd, Vstd, Wstd  
+           
+            plt.subplot(122)
+            plt.imshow(UOrgtest[:,:,i], vmin=vmin, vmax=vmax, cmap='seismic')
+            plt.title('static tissue')
+
+            plt.show()
+            
+
+    del USTD, VSTD, WSTD  
     
     flowCorrected = numpy.zeros([UOrg.shape[0], UOrg.shape[1], UOrg.shape[2], 3, UOrg.shape[3]])
    
@@ -91,16 +101,17 @@ def eddyCurrentCorrection(UOrg, VOrg, WOrg, randNoiseThreshold=1, eddyCurrentThr
     
     if eddyOrder == 1:
         # best-fit linear plane
-        for kIter in range(UOrg.shape[3]):
-            for iIter in range(UOrg.shape[2]):
+        #for kIter in range(UOrg.shape[3]):
+        for iIter in range(UOrg.shape[2]):
             
-                BU = UOrg[:, :, iIter, kIter].ravel()[eddyMaskIndicesU[:,:,iIter,kIter]]
-                BV = VOrg[:, :, iIter, kIter].ravel()[eddyMaskIndicesV[:,:,iIter,kIter]]
-                BW = WOrg[:, :, iIter, kIter].ravel()[eddyMaskIndicesW[:,:,iIter,kIter]]
+                BU = staticTissueU[:, :, iIter].ravel()
+                BV = staticTissueV[:, :, iIter].ravel()
+                BW = staticTissueW[:, :, iIter].ravel()
                     
-                D = numpy.ones((len(eddyMaskIndicesU[:,:,iIter,kIter]), 3))
-                D[:, 0] = X.ravel()[eddyMaskIndicesU[:,:,iIter,kIter]]
-                D[:, 1] = Y.ravel()[eddyMaskIndicesU[:,:,iIter,kIter]]
+                D = numpy.ones((staticTissueU.shape[0]*staticTissueU.shape[1], 3))
+                print(D.shape)
+                D[:, 0] = X.ravel()[BU>0]
+                D[:, 1] = Y.ravel()[BU>0]
             
        
                 CU,_,_,_ = scipy.linalg.lstsq(D, BU)    # coefficients
@@ -108,9 +119,9 @@ def eddyCurrentCorrection(UOrg, VOrg, WOrg, randNoiseThreshold=1, eddyCurrentThr
                 CW,_,_,_ = scipy.linalg.lstsq(D, BW)
         
                 # evaluate it on grid
-                plainU[:,:,iIter, kIter] = CU[0]*X + CU[1]*Y + CU[2]
-                plainV[:,:,iIter, kIter] = CV[0]*X + CV[1]*Y + CV[2]
-                plainW[:,:,iIter, kIter] = CW[0]*X + CW[1]*Y + CW[2]
+                plainU[:,:,iIter] = CU[0]*X + CU[1]*Y + CU[2]
+                plainV[:,:,iIter] = CV[0]*X + CV[1]*Y + CV[2]
+                plainW[:,:,iIter] = CW[0]*X + CW[1]*Y + CW[2]
             
             
         
@@ -144,11 +155,37 @@ def eddyCurrentCorrection(UOrg, VOrg, WOrg, randNoiseThreshold=1, eddyCurrentThr
             plainW[:,:,iIter] = CW[0]*X + CW[1]*Y + CW[2]*XY + CW[3]*X2 + CW[4]*Y2 + CW[5]
             
     
-    #for k in range(UOrg.shape[3]):
+    
+    if plotEddyPlane:
+        plt.figure(2)
+        #ax = fig.add_subplot(111, projection='3d')
+            
+        #for i in range(staticTissueU[20]):
+
+        Axes3D.plot_surface(X, Y,  plainU[:,:,20])  
+
+            
+
+       
+#            plt.subplot(121)
+ #           plt.imshow(UOrg[:,:,i,1], vmin=vmin, vmax=vmax, cmap='seismic')
+  #          plt.title('Org data')
+
+
+           
+   #         plt.subplot(122)
+    #        plt.imshow(UOrgtest[:,:,i], vmin=vmin, vmax=vmax, cmap='seismic')
+     #       plt.title('static tissue')
+
+        plt.show()  
+   
+
+
+    for k in range(UOrg.shape[3]):
         
-    flowCorrected[:, :, :,0] = UOrg - plainU
-    flowCorrected[:, :, :,1] = VOrg - plainV
-    flowCorrected[:, :, :,2] = WOrg - plainW
+        flowCorrected[:, :, :,0, k] = UOrg[:,:,:,k] - plainU
+        flowCorrected[:, :, :,1, k] = VOrg[:,:,:,k] - plainV
+        flowCorrected[:, :, :,2, k] = WOrg[:,:,:,k] - plainW
     
     
     return flowCorrected

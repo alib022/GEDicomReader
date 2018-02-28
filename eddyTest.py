@@ -11,7 +11,7 @@ VOrg = flowData[:,:,:,1,:]
 WOrg = flowData[:,:,:,2,:]
 
 
-flowCorrected = eddyNoise.randNoise(UOrg, VOrg, WOrg, plotBool=0)
+flowCorrectedNoise = eddyNoise.randNoise(UOrg, VOrg, WOrg, plotBool=0)
 
 
-eddyNoise.eddyCurrentCorrection(flowCorrected[:,:,:,0,:], flowCorrected[:,:,:,1,:], flowCorrected[:,:,:,2,:])
+flowCorrectedEddy = eddyNoise.eddyCurrentCorrection(flowCorrectedNoise[:,:,:,0,:], flowCorrectedNoise[:,:,:,1,:], flowCorrectedNoise[:,:,:,2,:])
