@@ -54,7 +54,7 @@ def readGEFlow(inputFlags, PatientDataStruc):
                 triggerTime.append(ds.TriggerTime)
                 
             # Get ref file
-        RefDs = dicom.read_file(lstFilesDCM[0])
+        #RefDs = dicom.read_file(lstFilesDCM[0])
             
             
         triggerTimeTemp = sorted(set(triggerTime), key=float)
@@ -104,14 +104,20 @@ def readGEFlow(inputFlags, PatientDataStruc):
 
         
           
-        if inputFlags.eddycurrent:
-            flowCorrected = eddyNoise.eddyCurrentCorrection(UOrg, VOrg, WOrg, inputFlags.randomnoise, inputFlags.eddythreshold, inputFlags.eddyplane)
+        if (inputFlags.eddycurrent is not None and inputFlags.randomnoise is not None):
+            flowCorrectedtemp = eddyNoise.randNoise(UOrg, VOrg, WOrg, int(inputFlags.randomnoise)/100, 0)
+            flowCorrected = eddyNoise.eddyCurrentCorrection(flowCorrectedtemp[:,:,:,0], flowCorrectedtemp[:,:,:,1], flowCorrectedtemp[:,:,:,2], inputFlags.eddythreshold, inputFlags.eddyplane, 0, 0, 1, 20)
 
-        elif inputFlags.randomnoise is not None:
-            flowCorrected = eddyNoise.randNoise(inputFlags, UOrg, VOrg, WOrg, int(inputFlags.randomnoise)/100, 0, 0)
+            
+        
+        if (inputFlags.eddycurrent is not None and inputFlags.randomnoise is None):
+            flowCorrected = eddyNoise.eddyCurrentCorrection(UOrg, VOrg, WOrg, inputFlags.eddythreshold, inputFlags.eddyplane, 0, 0, 1, 20)
+
+        if (inputFlags.randomnoise is not None and inputFlags.eddycurrent is None):
+            flowCorrected = eddyNoise.randNoise(UOrg, VOrg, WOrg, int(inputFlags.randomnoise)/100, 0)
             
             
-        else:
+        if (inputFlags.eddycurrent is None and inputFlags.randomnoise is None):
             flowCorrected[:, :, :,0, :] = UOrg
             flowCorrected[:, :, :,1, :] = VOrg
             flowCorrected[:, :, :,2, :] = WOrg

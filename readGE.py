@@ -1,6 +1,6 @@
-import dicom,os, glob, scipy.io, numpy, vtk, sys, argparse, timeit, math, printReport, readGEFlow, readGEMRA
+import os, numpy, sys, argparse, timeit, printReport, readGEFlow, readGEMRA
 from clint.textui import colored
-from DICOMClasses import PatientData
+#from DICOMClasses import PatientData
 from GEReadPatientInfo import readPatientInfo
 
 ''' This function reads GE Flow data '''
@@ -52,15 +52,9 @@ def main():
         if not os.path.exists(inputFlags.output):
             os.makedirs(inputFlags.output)
 
-    if (inputFlags.eddycurrent and inputFlags.eddythreshold is None):
-        inputFlags.eddythreshold = 20
 
     if inputFlags.randomnoise is None:
         print(colored.yellow("Warning: No random noise correction will happen!"))
-
-
-    if (inputFlags.eddycurrent and inputFlags.eddyplane is None):
-        inputFlags.eddyplane = 1
 
     if inputFlags.cmra:
         readGEMRA.readGEcMRA(inputFlags, PatientDataStruc)

@@ -1,15 +1,16 @@
-import dicom,os, glob, scipy.io, numpy, vtk, sys, datetime, argparse
+import scipy.io, numpy
 from clint.textui import colored
-from vtk.util import numpy_support
-from scipy.ndimage.filters import uniform_filter
+#from vtk.util import numpy_support
+#from scipy.ndimage.filters import uniform_filter
 from rolling_window import rolling_window
 
 
 
 import matplotlib.pyplot as plt
+#from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
 
-def eddyCurrentCorrection(UOrg, VOrg, WOrg, randNoiseThreshold=1, eddyCurrentThreshold=8, eddyOrder=2, plotBool=1, verbous=0, plotEddyPlane=1):
+def eddyCurrentCorrection(UOrg, VOrg, WOrg, eddyCurrentThreshold=8, eddyOrder=2, plotBool=0, verbous=0, plotEddyPlane=1, plotPlain=20):
 
 
     USTD = numpy.zeros((UOrg.shape[0],UOrg.shape[1],UOrg.shape[2]))
@@ -56,26 +57,25 @@ def eddyCurrentCorrection(UOrg, VOrg, WOrg, randNoiseThreshold=1, eddyCurrentThr
     print(staticTissueU.shape)
     
     if plotBool:
-        i = 20
 
-        vmax = numpy.max([UOrg[:,:,i,1].max(), staticTissueU[:,:,i].max()])
-        vmin = numpy.min([UOrg[:,:,i,1].min(), staticTissueU[:,:,i].min()])
+        vmax = numpy.max([UOrg[:,:,plotPlain,1].max(), staticTissueU[:,:,plotPlain].max()])
+        vmin = numpy.min([UOrg[:,:,plotPlain,1].min(), staticTissueU[:,:,plotPlain].min()])
         vmax = numpy.max([vmax, -vmin])
         vmin = -vmax
     
         #for i in range(1,3):
         # plot with various axes scales
-        plt.figure(i)
+        plt.figure(plotPlain)
 
        
         plt.subplot(121)
-        plt.imshow(UOrg[:,:,i,1], vmin=vmin, vmax=vmax, cmap='seismic')
+        plt.imshow(UOrg[:,:,plotPlain,1], vmin=vmin, vmax=vmax, cmap='seismic')
         plt.title('Org data')
 
 
            
         plt.subplot(122)
-        plt.imshow(staticTissueU[:,:,i], vmin=vmin, vmax=vmax, cmap='seismic')
+        plt.imshow(staticTissueU[:,:,plotPlain], vmin=vmin, vmax=vmax, cmap='seismic')
         plt.title('static tissue')
 
         plt.show()
@@ -165,9 +165,14 @@ def eddyCurrentCorrection(UOrg, VOrg, WOrg, randNoiseThreshold=1, eddyCurrentThr
     
     
     if plotEddyPlane:
-        plt.figure(2)
-        Axes3D.plot_surface(X, Y,  plainU[:,:,20])  
-        plt.show()  
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        # Plot the surface.
+        surf = ax.plot_surface(X, Y, plainU[:,:,plotPlain], linewidth=0, antialiased=False)
+        fig.colorbar(surf, shrink=0.5, aspect=5)
+
+        plt.show()
+
    
 
 
@@ -180,7 +185,7 @@ def eddyCurrentCorrection(UOrg, VOrg, WOrg, randNoiseThreshold=1, eddyCurrentThr
     
     return flowCorrected
 
-def randNoise(UOrg, VOrg, WOrg, randThre=25, plotBool=1):
+def randNoise(UOrg, VOrg, WOrg, randThre=25, plotBool=1, plotPlain=20):
 
     USTD = numpy.zeros((UOrg.shape[0],UOrg.shape[1],UOrg.shape[2]))
     VSTD = numpy.zeros(USTD.shape)
@@ -209,8 +214,8 @@ def randNoise(UOrg, VOrg, WOrg, randThre=25, plotBool=1):
 
     
     if plotBool:
-        vmax = numpy.max([UOrg[:,:,20,1].max(), VOrg[:,:,20,1].max(), WOrg[:,:,20,1].max()])
-        vmin = numpy.min([UOrg[:,:,20,1].min(), VOrg[:,:,20,1].min(), WOrg[:,:,20,1].min()])
+        vmax = numpy.max([UOrg[:,:,plotPlain,1].max(), VOrg[:,:,plotPlain,1].max(), WOrg[:,:,plotPlain,1].max()])
+        vmin = numpy.min([UOrg[:,:,plotPlain,1].min(), VOrg[:,:,plotPlain,1].min(), WOrg[:,:,plotPlain,1].min()])
         vmax = numpy.max([vmax, -vmin])
         vmin = -vmax
 
@@ -219,17 +224,17 @@ def randNoise(UOrg, VOrg, WOrg, randThre=25, plotBool=1):
 
        
         plt.subplot(131)
-        plt.imshow(UOrg[:,:,20,1], vmin=vmin, vmax=vmax, cmap='seismic')
+        plt.imshow(UOrg[:,:,plotPlain,1], vmin=vmin, vmax=vmax, cmap='seismic')
         plt.title('U Org')
 
 
        
         plt.subplot(132)
-        plt.imshow(VOrg[:,:,20, 1], vmin=vmin, vmax=vmax, cmap='seismic')
+        plt.imshow(VOrg[:,:,plotPlain, 1], vmin=vmin, vmax=vmax, cmap='seismic')
         plt.title('V Org')
 
         plt.subplot(133)
-        plt.imshow(WOrg[:,:,20, 1], vmin=vmin, vmax=vmax, cmap='seismic')
+        plt.imshow(WOrg[:,:,plotPlain, 1], vmin=vmin, vmax=vmax, cmap='seismic')
         plt.title('W Org')
 
         plt.show()
