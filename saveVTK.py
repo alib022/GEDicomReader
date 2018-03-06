@@ -61,13 +61,13 @@ def saveVTKSeg(magDataTemp, cMRA,TOF, pixel_spc, totalNodes, outPath):
             writer = vtk.vtkXMLImageDataWriter()
 
             if cMRA:
-                img_vtk.SetName("cMRA")
+              #  img_vtk.SetName("cMRA")
                 writer.SetFileName(outPath + '/cMRAData.vti')
             elif TOF:
-                img_vtk.SetName("TOF")
+              #  img_vtk.SetName("TOF")
                 writer.SetFileName(outPath + '/TOFData.vti')                
             else:
-                img_vtk.SetName("Magnitude")
+               # img_vtk.SetName("Magnitude")
                 writer.SetFileName(outPath + '/MagData.vti')
 
             writer.SetInputData(img_vtk)

@@ -53,8 +53,13 @@ def eddyCurrentCorrection(UOrg, VOrg, WOrg, eddyCurrentThreshold=8, eddyOrder=2,
     staticTissueU[(USTD > (eddyCurrentThreshold*USTD.max()/100)) & (VSTD > (eddyCurrentThreshold*VSTD.max()/100) ) & (WSTD > (eddyCurrentThreshold*WSTD.max()/100))] = 0
     staticTissueV[(USTD > (eddyCurrentThreshold*USTD.max()/100)) & (VSTD > (eddyCurrentThreshold*VSTD.max()/100) ) & (WSTD > (eddyCurrentThreshold*WSTD.max()/100))] = 0
     staticTissueW[(USTD > (eddyCurrentThreshold*USTD.max()/100)) & (VSTD > (eddyCurrentThreshold*VSTD.max()/100) ) & (WSTD > (eddyCurrentThreshold*WSTD.max()/100))] = 0
+    
+    with open("eddyNoisestatictissue.mat", 'wb') as matlabFile:
+        scipy.io.savemat(matlabFile, mdict={'staticTissueU': staticTissueU})
+        scipy.io.savemat(matlabFile, mdict={'staticTissueV': staticTissueV})
+        scipy.io.savemat(matlabFile, mdict={'staticTissueW': staticTissueW})
 
-    print(staticTissueU.shape)
+    
     
     if plotBool:
 
@@ -112,16 +117,31 @@ def eddyCurrentCorrection(UOrg, VOrg, WOrg, eddyCurrentThreshold=8, eddyOrder=2,
 
                 notZeroIndU = numpy.nonzero(BUInd)
                 notZeroIndV = numpy.nonzero(BVInd)
-                notZeroIndW = numpy.nonZero(BWInd)
+                notZeroIndW = numpy.nonzero(BWInd)
 
                 BU = BUInd[notZeroIndU].ravel()
                 BV = BVInd[notZeroIndV].ravel()
                 BW = BWInd[notZeroIndW].ravel()
                 
-                DU = numpy.c_[X[notZeroIndU].ravel(), Y[notZeroIndU].ravel(), numpy.ones(len(X[notZeroIndU].ravel()))]
-                DV = numpy.c_[X[notZeroIndV].ravel(), Y[notZeroIndV].ravel(), numpy.ones(len(X[notZeroIndV].ravel()))]
-                DW = numpy.c_[X[notZeroIndV].ravel(), Y[notZeroIndV].ravel(), numpy.ones(len(X[notZeroIndV].ravel()))]
+                print("BU shape")
+                print(BU.shape)
+                print("BV shape")
+                print(BV.shape)
+                print("BW shape")
+                print(BW.shape)
+                
+                
+                DU = numpy.c_[X[notZeroIndU].ravel(), Y[notZeroIndU].ravel(), numpy.ones(len(BU))]
+                DV = numpy.c_[X[notZeroIndV].ravel(), Y[notZeroIndV].ravel(), numpy.ones(len(BV))]
+                DW = numpy.c_[X[notZeroIndV].ravel(), Y[notZeroIndV].ravel(), numpy.ones(len(BW))]
             
+                print("DU shape")
+                print(DU.shape)
+                print("DV shape")
+                print(DV.shape)
+                print("DW shape")
+                print(DW.shape)
+                
                 CU,_,_,_ = scipy.linalg.lstsq(DU, BU)    # coefficients
                 CV,_,_,_ = scipy.linalg.lstsq(DV, BV)    # coefficients
                 CW,_,_,_ = scipy.linalg.lstsq(DW, BW)
@@ -148,11 +168,26 @@ def eddyCurrentCorrection(UOrg, VOrg, WOrg, eddyCurrentThreshold=8, eddyOrder=2,
             BU = BUInd[notZeroIndU].ravel()
             BV = BVInd[notZeroIndV].ravel()
             BW = BWInd[notZeroIndW].ravel()
+            
+            print("BU shape")
+            print(BU.shape)
+            print("BV shape")
+            print(BV.shape)
+            print("BW shape")
+            print(BW.shape)
+            
                 
-            DU = numpy.c_[X[notZeroIndU].ravel(), Y[notZeroIndU].ravel(), XY[notZeroIndU].ravel(), X2[notZeroIndU].ravel() , Y2[notZeroIndU].ravel() , numpy.ones(len(X[notZeroIndU].ravel()))]
-            DV = numpy.c_[X[notZeroIndV].ravel(), Y[notZeroIndV].ravel(), XY[notZeroIndV].ravel(), X2[notZeroIndV].ravel() , Y2[notZeroIndV].ravel() , numpy.ones(len(X[notZeroIndV].ravel()))]
-            DW = numpy.c_[X[notZeroIndW].ravel(), Y[notZeroIndW].ravel(), XY[notZeroIndW].ravel(), X2[notZeroIndW].ravel() , Y2[notZeroIndW].ravel() , numpy.ones(len(X[notZeroIndW].ravel()))]
+            DU = numpy.c_[X[notZeroIndU].ravel(), Y[notZeroIndU].ravel(), XY[notZeroIndU].ravel(), X2[notZeroIndU].ravel() , Y2[notZeroIndU].ravel() , numpy.ones(len(BU))]
+            DV = numpy.c_[X[notZeroIndV].ravel(), Y[notZeroIndV].ravel(), XY[notZeroIndV].ravel(), X2[notZeroIndV].ravel() , Y2[notZeroIndV].ravel() , numpy.ones(len(BV))]
+            DW = numpy.c_[X[notZeroIndW].ravel(), Y[notZeroIndW].ravel(), XY[notZeroIndW].ravel(), X2[notZeroIndW].ravel() , Y2[notZeroIndW].ravel() , numpy.ones(len(BW))]
 
+            print("DU shape")
+            print(DU.shape)
+            print("DV shape")
+            print(DV.shape)
+            print("DW shape")
+            print(DW.shape)
+                
             CU,_,_,_ = scipy.linalg.lstsq(DU, BU)    # coefficients
             CV,_,_,_ = scipy.linalg.lstsq(DV, BV)    # coefficients
             CW,_,_,_ = scipy.linalg.lstsq(DW, BW)
@@ -168,8 +203,8 @@ def eddyCurrentCorrection(UOrg, VOrg, WOrg, eddyCurrentThreshold=8, eddyOrder=2,
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
         # Plot the surface.
-        surf = ax.plot_surface(X, Y, plainU[:,:,plotPlain], linewidth=0, antialiased=False)
-        fig.colorbar(surf, shrink=0.5, aspect=5)
+        ax.plot_surface(X, Y, plainU[:,:,plotPlain], linewidth=0, antialiased=False)
+        #fig.colorbar(surf, shrink=0.5, aspect=5)
 
         plt.show()
 
@@ -205,6 +240,11 @@ def randNoise(UOrg, VOrg, WOrg, randThre=25, plotBool=1, plotPlain=20):
     UOrg[(USTD > (randThre*USTD.max()/100)) & (VSTD > (randThre*VSTD.max()/100) ) & (WSTD > (randThre*WSTD.max()/100))] = 0
     VOrg[(USTD > (randThre*USTD.max()/100)) & (VSTD > (randThre*VSTD.max()/100) ) & (WSTD > (randThre*WSTD.max()/100))] = 0
     WOrg[(USTD > (randThre*USTD.max()/100)) & (VSTD > (randThre*VSTD.max()/100) ) & (WSTD > (randThre*WSTD.max()/100))] = 0
+    
+    with open("randNoisestatictissue.mat", 'wb') as matlabFile:
+        scipy.io.savemat(matlabFile, mdict={'UOrg': UOrg})
+        scipy.io.savemat(matlabFile, mdict={'VOrg': VOrg})
+        scipy.io.savemat(matlabFile, mdict={'WOrg': WOrg})
 
 
 
