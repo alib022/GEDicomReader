@@ -1,4 +1,4 @@
-import dicom,os, glob, scipy.io, numpy, vtk, sys, datetime, argparse, math, saveVTK
+import pydicom,os, glob, scipy.io, numpy, vtk, sys, datetime, argparse, math, saveVTK
 from clint.textui import colored
 from vtk.util import numpy_support
 
@@ -10,7 +10,7 @@ def readGETOF(args, PatientDataStruc):
         
     
     filesListTEMP = glob.glob(MagPathStr + "/*") 
-    ds = dicom.read_file(filesListTEMP[0])
+    ds = pydicom.read_file(filesListTEMP[0])
     ConstDimsTemp = (int(ds.Rows), int(ds.Columns), int(ds.ImagesInAcquisition), int(ds.CardiacNumberOfImages))
  #   ConstDimsTemp = (int(ds.Rows), int(ds.Columns), int(math.ceil(len(filesListTEMP)/ int(ds.CardiacNumberOfImages))), int(ds.CardiacNumberOfImages))
 
@@ -41,12 +41,12 @@ def readGETOF(args, PatientDataStruc):
             for filename in fileList:
             # if ".dcm" in filename.lower():  # check whether the file's DICOM
                 lstFilesDCM.append(os.path.join(dirName,filename))
-                ds = dicom.read_file(lstFilesDCM[-1])
+                ds = pydicom.read_file(lstFilesDCM[-1])
                 sliceLocation.append(ds.SliceLocation)
                 
                 
             # Get ref file
-        RefDs = dicom.read_file(lstFilesDCM[0])
+        RefDs = pydicom.read_file(lstFilesDCM[0])
             
             
         #triggerTimeTemp = sorted(set(triggerTime), key=float)
@@ -67,7 +67,7 @@ def readGETOF(args, PatientDataStruc):
         ReadData = numpy.zeros(ConstPixelDims, dtype=numpy.double)
 
         for iFile in lstFilesDCM:
-            dsTemp = dicom.read_file (iFile)
+            dsTemp = pydicom.read_file (iFile)
             #print(dsTemp.TriggerTime)
             ReadData[:,:,sliceLocationTemp.index(dsTemp.SliceLocation)]= dsTemp.pixel_array.astype('float')
                     
@@ -109,7 +109,7 @@ def readGEcMRA(args, PatientDataStruc):
         
     
     filesListTEMP = glob.glob(MagPathStr + "/*") 
-    ds = dicom.read_file(filesListTEMP[0])
+    ds = pydicom.read_file(filesListTEMP[0])
     ConstDimsTemp = (int(ds.Rows), int(ds.Columns), int(ds.ImagesInAcquisition), int(ds.CardiacNumberOfImages))
     dXY = ds.PixelSpacing
     dZ = ds.SpacingBetweenSlices
@@ -138,12 +138,12 @@ def readGEcMRA(args, PatientDataStruc):
             for filename in fileList:
             # if ".dcm" in filename.lower():  # check whether the file's DICOM
                 lstFilesDCM.append(os.path.join(dirName,filename))
-                ds = dicom.read_file(lstFilesDCM[-1])
+                ds = pydicom.read_file(lstFilesDCM[-1])
                 sliceLocation.append(ds.SliceLocation)
                 triggerTime.append(ds.TriggerTime)
                 
             # Get ref file
-        RefDs = dicom.read_file(lstFilesDCM[0])
+        RefDs = pydicom.read_file(lstFilesDCM[0])
             
             
         triggerTimeTemp = sorted(set(triggerTime), key=float)
@@ -161,7 +161,7 @@ def readGEcMRA(args, PatientDataStruc):
         ReadData = numpy.zeros(ConstPixelDims, dtype=numpy.double)
 
         for iFile in lstFilesDCM:
-            dsTemp = dicom.read_file (iFile)
+            dsTemp = pydicom.read_file (iFile)
             #print(dsTemp.TriggerTime)
             ReadData[:,:,sliceLocationTemp.index(dsTemp.SliceLocation), triggerTimeTemp.index(dsTemp.TriggerTime)]= dsTemp.pixel_array.astype('float')
                     

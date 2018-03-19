@@ -1,4 +1,4 @@
-import scipy.io, numpy
+import scipy.io, numpy, saveVTK
 from clint.textui import colored
 #from vtk.util import numpy_support
 #from scipy.ndimage.filters import uniform_filter
@@ -133,7 +133,7 @@ def eddyCurrentCorrection(UOrg, VOrg, WOrg, eddyCurrentThreshold=8, eddyOrder=2,
                 
                 DU = numpy.c_[X[notZeroIndU].ravel(), Y[notZeroIndU].ravel(), numpy.ones(len(BU))]
                 DV = numpy.c_[X[notZeroIndV].ravel(), Y[notZeroIndV].ravel(), numpy.ones(len(BV))]
-                DW = numpy.c_[X[notZeroIndV].ravel(), Y[notZeroIndV].ravel(), numpy.ones(len(BW))]
+                DW = numpy.c_[X[notZeroIndW].ravel(), Y[notZeroIndW].ravel(), numpy.ones(len(BW))]
             
                 print("DU shape")
                 print(DU.shape)
@@ -225,6 +225,7 @@ def randNoise(UOrg, VOrg, WOrg, randThre=25, plotBool=1, plotPlain=20):
     USTD = numpy.zeros((UOrg.shape[0],UOrg.shape[1],UOrg.shape[2]))
     VSTD = numpy.zeros(USTD.shape)
     WSTD = numpy.zeros(USTD.shape)
+
     
 
     for kIter in range(UOrg.shape[2]):
@@ -236,10 +237,15 @@ def randNoise(UOrg, VOrg, WOrg, randThre=25, plotBool=1, plotPlain=20):
     
     flowCorrected = numpy.zeros([UOrg.shape[0], UOrg.shape[1], UOrg.shape[2],3,UOrg.shape[3]])
 
+    noiseMask = numpy.zeros(USTD.shape)
+    noiseMask[(USTD > (randThre*USTD.max()/100)) & (VSTD > (randThre*VSTD.max()/100) ) & (WSTD > (randThre*WSTD.max()/100))] = 1
 
     UOrg[(USTD > (randThre*USTD.max()/100)) & (VSTD > (randThre*VSTD.max()/100) ) & (WSTD > (randThre*WSTD.max()/100))] = 0
     VOrg[(USTD > (randThre*USTD.max()/100)) & (VSTD > (randThre*VSTD.max()/100) ) & (WSTD > (randThre*WSTD.max()/100))] = 0
     WOrg[(USTD > (randThre*USTD.max()/100)) & (VSTD > (randThre*VSTD.max()/100) ) & (WSTD > (randThre*WSTD.max()/100))] = 0
+    
+    PixelSize = numpy.array([0.70, 0.70, 0.4])
+    saveVTK.saveVTKSeg(noiseMask,False,False, PixelSize, 0, "../")
     
     with open("randNoisestatictissue.mat", 'wb') as matlabFile:
         scipy.io.savemat(matlabFile, mdict={'UOrg': UOrg})
@@ -284,5 +290,27 @@ def randNoise(UOrg, VOrg, WOrg, randThre=25, plotBool=1, plotPlain=20):
 
 
 
+def randNoiseV2(magData, UOrg, VOrg, WOrg, randThre=0.2, plotBool=1, plotPlain=20):
 
+
+    noiseMask = numpy.zeros(magData.shape)
+    noiseThre = (randThre) * (magData.max()- magData.min())
+    noiseMask[magData > noiseThre] = 1
+    print("mag data max")
+    print(magData.max())
+    print("mag data min")
+    print(magData.min())    
+    print("noise threshold")
+    print(noiseThre)
+    print("noise mask shape")
+    print(noiseMask.shape)
+    
+    print(noiseMask.max())
+    PixelSize = numpy.array([0.70, 0.70, 0.4])
+    
+    saveVTK.saveVTKSeg(noiseMask,False,False, PixelSize, 0, "../")
+    
+            
+    
+    return noiseThre
 

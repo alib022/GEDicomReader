@@ -1,4 +1,4 @@
-import math, dicom, glob, DICOMClasses
+import math, pydicom, glob, DICOMClasses
 
 
 def main(foldersList):
@@ -9,7 +9,7 @@ def main(foldersList):
     for dirName in foldersList:
         filesListTEMP = glob.glob(dirName + "/*") 
                     
-        ds = dicom.read_file(filesListTEMP[0])
+        ds = pydicom.read_file(filesListTEMP[0])
         GESoftwareVersion = int(ds.SoftwareVersions[0])
 
         if GESoftwareVersion == 27:
@@ -22,7 +22,7 @@ def main(foldersList):
 
         filesListTEMP = glob.glob(dirName + "/*") 
                     
-        ds = dicom.read_file(filesListTEMP[0])
+        ds = pydicom.read_file(filesListTEMP[0])
         GESoftwareVersion = int(ds.SoftwareVersions[0])
 
         if GESoftwareVersion == 27:

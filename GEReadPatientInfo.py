@@ -1,4 +1,4 @@
-import dicom,os, glob, sys, GEReadInfo, DICOMClasses
+import pydicom,os, glob, sys, GEReadInfo, DICOMClasses
 from clint.textui import colored
 
 
@@ -13,7 +13,7 @@ def readPatientInfo(FolderPath, cmra, tof):
         PatientDataStruc = DICOMClasses.PatientData()        
         filesListTEMP = glob.glob(MagPathStr + "/*") 
             
-        ds = dicom.read_file(filesListTEMP[0])
+        ds = pydicom.read_file(filesListTEMP[0])
 
         dXY = ds.PixelSpacing
         dZ = ds.SpacingBetweenSlices

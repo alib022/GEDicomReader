@@ -1,4 +1,4 @@
-import dicom,os, glob, scipy.io, numpy, vtk, sys, saveVTK, math, eddyNoise
+import pydicom,os, glob, scipy.io, numpy, vtk, sys, saveVTK, math, eddyNoise
 from clint.textui import colored
 from vtk.util import numpy_support
 
@@ -49,7 +49,7 @@ def readGEFlow(inputFlags, PatientDataStruc):
             for filename in fileList:
             # if ".dcm" in filename.lower():  # check whether the file's DICOM
                 lstFilesDCM.append(os.path.join(dirName,filename))
-                ds = dicom.read_file(lstFilesDCM[-1])
+                ds = pydicom.read_file(lstFilesDCM[-1])
                 sliceLocation.append(ds.SliceLocation)
                 triggerTime.append(ds.TriggerTime)
                 
@@ -72,7 +72,7 @@ def readGEFlow(inputFlags, PatientDataStruc):
                 ReadData = numpy.zeros(PatientDataStruc.MagVecSize, dtype=numpy.double)
 
                 for iFile in lstFilesDCM:
-                    dsTemp = dicom.read_file (iFile)
+                    dsTemp = pydicom.read_file (iFile)
                     ReadData[:,:,sliceLocationTemp.index(dsTemp.SliceLocation),triggerTimeTemp.index(dsTemp.TriggerTime)]= dsTemp.pixel_array.astype('float')
                     
                 magDataTemp = ReadData.mean(3)
@@ -86,7 +86,7 @@ def readGEFlow(inputFlags, PatientDataStruc):
                     flowData = numpy.zeros(PatientDataStruc.FlowVecSize, dtype=numpy.double)
  #                   print(PatientDataStruc.FlowVecSize)
                 for iFile in lstFilesDCM:
-                    dsTemp = dicom.read_file (iFile)        
+                    dsTemp = pydicom.read_file (iFile)        
                     flowData[:,:,sliceLocationTemp.index(dsTemp.SliceLocation), folderNumber-1,triggerTimeTemp.index(dsTemp.TriggerTime)]= dsTemp.pixel_array.astype('float')
     
                 if inputFlags.mat:
@@ -105,19 +105,21 @@ def readGEFlow(inputFlags, PatientDataStruc):
         
           
         if (inputFlags.eddycurrent is not None and inputFlags.randomnoise is not None):
+            
+            flowCorrectedtemp2 = eddyNoise.randNoiseV2(magDataTemp, UOrg, VOrg, WOrg, int(inputFlags.randomnoise)/100, 0)            
             flowCorrectedtemp = eddyNoise.randNoise(UOrg, VOrg, WOrg, int(inputFlags.randomnoise)/100, 0)
             flowCorrected = eddyNoise.eddyCurrentCorrection(flowCorrectedtemp[:,:,:,0], flowCorrectedtemp[:,:,:,1], flowCorrectedtemp[:,:,:,2], inputFlags.eddythreshold, inputFlags.eddyplane, 0, 0, 1, 20)
 
             
         
-        if (inputFlags.eddycurrent is not None and inputFlags.randomnoise is None):
+        if (inputFlags.eddythreshold is not None and inputFlags.randomnoise is None):
             flowCorrected = eddyNoise.eddyCurrentCorrection(UOrg, VOrg, WOrg, inputFlags.eddythreshold, inputFlags.eddyplane, 0, 0, 1, 20)
 
-        if (inputFlags.randomnoise is not None and inputFlags.eddycurrent is None):
+        if (inputFlags.randomnoise is not None and inputFlags.eddythreshold is None):
             flowCorrected = eddyNoise.randNoise(UOrg, VOrg, WOrg, int(inputFlags.randomnoise)/100, 0)
             
             
-        if (inputFlags.eddycurrent is None and inputFlags.randomnoise is None):
+        if (inputFlags.eddythreshold is None and inputFlags.randomnoise is None):
             flowCorrected[:, :, :,0, :] = UOrg
             flowCorrected[:, :, :,1, :] = VOrg
             flowCorrected[:, :, :,2, :] = WOrg
