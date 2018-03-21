@@ -1,4 +1,4 @@
-import scipy.io, numpy, saveVTK
+import scipy.io, numpy, saveVTK, sys
 from clint.textui import colored
 #from vtk.util import numpy_support
 #from scipy.ndimage.filters import uniform_filter
@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 #from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
 
-def eddyCurrentCorrection(UOrg, VOrg, WOrg, eddyCurrentThreshold=8, eddyOrder=2, plotBool=0, verbous=0, plotEddyPlane=1, plotPlain=20):
+def eddyCurrentCorrection(UOrg, VOrg, WOrg, magData, STDPower=2,  eddyCurrentThreshold=8, eddyOrder=2, plotBool=0, verbous=0, plotEddyPlane=1, plotPlain=20):
 
 
     USTD = numpy.zeros((UOrg.shape[0],UOrg.shape[1],UOrg.shape[2]))
@@ -43,8 +43,23 @@ def eddyCurrentCorrection(UOrg, VOrg, WOrg, eddyCurrentThreshold=8, eddyOrder=2,
         print("USTD size: ")
         print(USTD.shape)
 
+    with numpy.errstate(invalid='ignore'):
+          weightU = magData / (USTD) ** STDPower
+          weightV = magData / (VSTD) ** STDPower
+          weightW = magData / (WSTD) ** STDPower
 
-    
+    weightU[numpy.isnan(weightU)] = 0
+    weightV[numpy.isnan(weightV)] = 0
+    weightW[numpy.isnan(weightW)] = 0
+    weightU[numpy.isinf(weightU)] = 0
+    weightV[numpy.isinf(weightV)] = 0
+    weightW[numpy.isinf(weightW)] = 0
+
+    PixelSize = numpy.array([0.70, 0.70, 0.4])
+
+    saveVTK.saveVTKSeg(weightU,False,False, PixelSize, 0, "../")
+
+    sys.exit()
 
     staticTissueU = UOrg[:,:,:,-1].copy()
     staticTissueV = VOrg[:,:,:,-1].copy()

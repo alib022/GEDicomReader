@@ -18,4 +18,4 @@ WOrg = flowData[:,:,:,2,:]
 flowCorrectedNoise = eddyNoise.randNoise( UOrg, VOrg, WOrg, 30, 0)
 
 
-#flowCorrectedEddy = eddyNoise.eddyCurrentCorrection(flowCorrectedNoise[:,:,:,0,:], flowCorrectedNoise[:,:,:,1,:], flowCorrectedNoise[:,:,:,2,:])
+flowCorrectedEddy = eddyNoise.eddyCurrentCorrection(flowCorrectedNoise[:,:,:,0,:], flowCorrectedNoise[:,:,:,1,:], flowCorrectedNoise[:,:,:,2,:], magData)
