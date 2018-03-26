@@ -1,5 +1,5 @@
-import scipy.io, numpy, saveVTK, sys
-from clint.textui import colored
+import scipy.io, numpy, saveVTK, warnings
+#from clint.textui import colored
 #from vtk.util import numpy_support
 #from scipy.ndimage.filters import uniform_filter
 from rolling_window import rolling_window
@@ -10,103 +10,18 @@ import matplotlib.pyplot as plt
 #from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
 
-def eddyCurrentCorrection(UOrg, VOrg, WOrg, magData, STDPower=2,  eddyCurrentThreshold=8, eddyOrder=2, plotBool=0, verbous=0, plotEddyPlane=1, plotPlain=20):
+
+warnings.simplefilter(action='ignore', category=FutureWarning)
+
+def eddyCurrentCorrection(UOrg, VOrg, WOrg, magData, STDPower=2,  eddyCurrentThreshold=15, eddyOrder=2, plotBool=0, verbous=1, plotEddyPlane=1, plotPlain=20):
 
 
-    USTD = numpy.zeros((UOrg.shape[0],UOrg.shape[1],UOrg.shape[2]))
+    USTD = numpy.zeros((UOrg.shape[0],UOrg.shape[1]))
     VSTD = numpy.zeros(USTD.shape)
     WSTD = numpy.zeros(USTD.shape)
     
-
-    for kIter in range(UOrg.shape[2]):
-
-        USTD[1:(UOrg.shape[0]-1),1:(UOrg.shape[1]-1), kIter] = numpy.std(rolling_window(UOrg[:,:,kIter,:], (3,3,0), toend=False), axis=(4,3,1))
-        VSTD[1:(VOrg.shape[0]-1),1:(VOrg.shape[1]-1), kIter] = numpy.std(rolling_window(VOrg[:,:,kIter,:], (3,3,0), toend=False), axis=(4,3,1))
-        WSTD[1:(WOrg.shape[0]-1),1:(WOrg.shape[1]-1), kIter] = numpy.std(rolling_window(WOrg[:,:,kIter,:], (3,3,0), toend=False), axis=(4,3,1))
-
-    
-    if verbous:    
-        print("Ustd Max: ")
-        print(USTD.max())
-        print("Vstd Max: ")
-        print(VSTD.max())
-        print("Wstd Max: ")
-        print(WSTD.max())
-
-        print("Ustd Min: ")
-        print(USTD.min())
-        print("Vstd Min: ")
-        print(VSTD.min())
-        print("Wstd Min: ")
-        print(WSTD.min())
-
-        print("USTD size: ")
-        print(USTD.shape)
-
-    with numpy.errstate(invalid='ignore'):
-          weightU = magData / (USTD) ** STDPower
-          weightV = magData / (VSTD) ** STDPower
-          weightW = magData / (WSTD) ** STDPower
-
-    weightU[numpy.isnan(weightU)] = 0
-    weightV[numpy.isnan(weightV)] = 0
-    weightW[numpy.isnan(weightW)] = 0
-    weightU[numpy.isinf(weightU)] = 0
-    weightV[numpy.isinf(weightV)] = 0
-    weightW[numpy.isinf(weightW)] = 0
-
-    PixelSize = numpy.array([0.70, 0.70, 0.4])
-
-    saveVTK.saveVTKSeg(weightU,False,False, PixelSize, 0, "../")
-
-    sys.exit()
-
-    staticTissueU = UOrg[:,:,:,-1].copy()
-    staticTissueV = VOrg[:,:,:,-1].copy()
-    staticTissueW = WOrg[:,:,:,-1].copy()
-
-    staticTissueU[(USTD > (eddyCurrentThreshold*USTD.max()/100)) & (VSTD > (eddyCurrentThreshold*VSTD.max()/100) ) & (WSTD > (eddyCurrentThreshold*WSTD.max()/100))] = 0
-    staticTissueV[(USTD > (eddyCurrentThreshold*USTD.max()/100)) & (VSTD > (eddyCurrentThreshold*VSTD.max()/100) ) & (WSTD > (eddyCurrentThreshold*WSTD.max()/100))] = 0
-    staticTissueW[(USTD > (eddyCurrentThreshold*USTD.max()/100)) & (VSTD > (eddyCurrentThreshold*VSTD.max()/100) ) & (WSTD > (eddyCurrentThreshold*WSTD.max()/100))] = 0
-    
-    with open("eddyNoisestatictissue.mat", 'wb') as matlabFile:
-        scipy.io.savemat(matlabFile, mdict={'staticTissueU': staticTissueU})
-        scipy.io.savemat(matlabFile, mdict={'staticTissueV': staticTissueV})
-        scipy.io.savemat(matlabFile, mdict={'staticTissueW': staticTissueW})
-
-    
-    
-    if plotBool:
-
-        vmax = numpy.max([UOrg[:,:,plotPlain,1].max(), staticTissueU[:,:,plotPlain].max()])
-        vmin = numpy.min([UOrg[:,:,plotPlain,1].min(), staticTissueU[:,:,plotPlain].min()])
-        vmax = numpy.max([vmax, -vmin])
-        vmin = -vmax
-    
-        #for i in range(1,3):
-        # plot with various axes scales
-        plt.figure(plotPlain)
-
-       
-        plt.subplot(121)
-        plt.imshow(UOrg[:,:,plotPlain,1], vmin=vmin, vmax=vmax, cmap='seismic')
-        plt.title('Org data')
-
-
-           
-        plt.subplot(122)
-        plt.imshow(staticTissueU[:,:,plotPlain], vmin=vmin, vmax=vmax, cmap='seismic')
-        plt.title('static tissue')
-
-        plt.show()
-            
-
-    del USTD, VSTD, WSTD
-
-    
     flowCorrected = numpy.zeros([UOrg.shape[0], UOrg.shape[1], UOrg.shape[2], 3, UOrg.shape[3]])
-   
-       
+          
     xInit = numpy.linspace(0, UOrg.shape[0], UOrg.shape[0])
     yInit = numpy.linspace(0, UOrg.shape[1], UOrg.shape[1])
     
@@ -123,43 +38,77 @@ def eddyCurrentCorrection(UOrg, VOrg, WOrg, magData, STDPower=2,  eddyCurrentThr
     plainW = numpy.zeros([UOrg.shape[0], UOrg.shape[1], UOrg.shape[2]])
     
     if eddyOrder == 1:
-        # best-fit linear plane
+        
         for iIter in range(UOrg.shape[2]):
             
-                BUInd = staticTissueU[:,:,iIter].copy()
-                BVInd = staticTissueV[:,:,iIter].copy()
-                BWInd = staticTissueW[:,:,iIter].copy()
+                # best-fit linear plane
+                UFit = UOrg[:, :, iIter, -1].copy()
+                VFit = VOrg[:, :, iIter, -1].copy()
+                WFit = WOrg[:, :, iIter, -1].copy()
+                
+                UFit = UFit.ravel()
+                VFit = VFit.ravel()
+                WFit = WFit.ravel()
+                
+                magDataSelected = magData[:,:,iIter].copy()
+                
+                USTD[1:(UOrg.shape[0]-1),1:(UOrg.shape[1]-1)] = numpy.std(rolling_window(UOrg[:,:,iIter,:], (3,3,0), toend=False), axis=(4,3,1))
+                VSTD[1:(VOrg.shape[0]-1),1:(VOrg.shape[1]-1)] = numpy.std(rolling_window(VOrg[:,:,iIter,:], (3,3,0), toend=False), axis=(4,3,1))
+                WSTD[1:(WOrg.shape[0]-1),1:(WOrg.shape[1]-1)] = numpy.std(rolling_window(WOrg[:,:,iIter,:], (3,3,0), toend=False), axis=(4,3,1))
 
-                notZeroIndU = numpy.nonzero(BUInd)
-                notZeroIndV = numpy.nonzero(BVInd)
-                notZeroIndW = numpy.nonzero(BWInd)
-
-                BU = BUInd[notZeroIndU].ravel()
-                BV = BVInd[notZeroIndV].ravel()
-                BW = BWInd[notZeroIndW].ravel()
-                
-                print("BU shape")
-                print(BU.shape)
-                print("BV shape")
-                print(BV.shape)
-                print("BW shape")
-                print(BW.shape)
-                
-                
-                DU = numpy.c_[X[notZeroIndU].ravel(), Y[notZeroIndU].ravel(), numpy.ones(len(BU))]
-                DV = numpy.c_[X[notZeroIndV].ravel(), Y[notZeroIndV].ravel(), numpy.ones(len(BV))]
-                DW = numpy.c_[X[notZeroIndW].ravel(), Y[notZeroIndW].ravel(), numpy.ones(len(BW))]
+                USTDSelectInd = numpy.where(USTD > (eddyCurrentThreshold/100) * USTD.max())
+                VSTDSelectInd = numpy.where(VSTD > (eddyCurrentThreshold/100) * VSTD.max())
+                WSTDSelectInd = numpy.where(WSTD > (eddyCurrentThreshold/100) * WSTD.max())
+    
+                USTDSelected = USTD[USTDSelectInd].copy()
+                VSTDSelected = VSTD[VSTDSelectInd].copy()
+                WSTDSelected = WSTD[WSTDSelectInd].copy()
             
-                print("DU shape")
-                print(DU.shape)
-                print("DV shape")
-                print(DV.shape)
-                print("DW shape")
-                print(DW.shape)
+                with numpy.errstate(invalid='ignore'):
+                      weightU = magDataSelected[USTDSelectInd] / (USTDSelected) ** STDPower
+                      weightV = magDataSelected[VSTDSelectInd] / (VSTDSelected) ** STDPower
+                      weightW = magDataSelected[WSTDSelectInd] / (WSTDSelected) ** STDPower
+            
+                weightU[numpy.isnan(weightU)] = 0
+                weightV[numpy.isnan(weightV)] = 0
+                weightW[numpy.isnan(weightW)] = 0
+                weightU[numpy.isinf(weightU)] = 0
+                weightV[numpy.isinf(weightV)] = 0
+                weightW[numpy.isinf(weightW)] = 0
+    
+                     
+                notZeroIndU = numpy.where(weightU > 0)
+                notZeroIndV = numpy.where(weightV > 0)
+                notZeroIndW = numpy.where(weightW > 0)
                 
-                CU,_,_,_ = scipy.linalg.lstsq(DU, BU)    # coefficients
-                CV,_,_,_ = scipy.linalg.lstsq(DV, BV)    # coefficients
-                CW,_,_,_ = scipy.linalg.lstsq(DW, BW)
+                BU = UFit[notZeroIndU]
+                BV = VFit[notZeroIndV]
+                BW = WFit[notZeroIndW]
+                    
+                Xravel = X.ravel()
+                Yravel = Y.ravel()
+                
+                
+                DU = numpy.c_[Xravel[notZeroIndU], Yravel[notZeroIndU], numpy.ones(len(BU))]
+                DV = numpy.c_[Xravel[notZeroIndV], Yravel[notZeroIndV], numpy.ones(len(BV))]
+                DW = numpy.c_[Xravel[notZeroIndW], Yravel[notZeroIndW], numpy.ones(len(BW))]
+                
+                WU = numpy.sqrt(weightU[notZeroIndU])
+                WV = numpy.sqrt(weightV[notZeroIndV])
+                WW = numpy.sqrt(weightW[notZeroIndW])
+                
+                
+                DUW = (WU * DU.T).T
+                DVW = (WV * DV.T).T
+                DWW = (WW * DW.T).T
+                
+                BUW = BU * WU
+                BVW = BV * WV
+                BWW = BW * WW
+
+                CU,_,_,_ = scipy.linalg.lstsq(DUW, BUW)    # coefficients
+                CV,_,_,_ = scipy.linalg.lstsq(DVW, BVW)    # coefficients
+                CW,_,_,_ = scipy.linalg.lstsq(DWW, BWW)
         
                 # evaluate it on grid
                 plainU[:,:,iIter] = CU[0]*X + CU[1]*Y + CU[2]
@@ -172,36 +121,59 @@ def eddyCurrentCorrection(UOrg, VOrg, WOrg, magData, STDPower=2,  eddyCurrentThr
         
         for iIter in range(plainU.shape[2]):
 
-            BUInd = staticTissueU[:,:,iIter].copy()
-            BVInd = staticTissueV[:,:,iIter].copy()
-            BWInd = staticTissueW[:,:,iIter].copy()
-
-            notZeroIndU = numpy.nonzero(BUInd)
-            notZeroIndV = numpy.nonzero(BVInd)
-            notZeroIndW = numpy.nonzero(BWInd)
-
-            BU = BUInd[notZeroIndU].ravel()
-            BV = BVInd[notZeroIndV].ravel()
-            BW = BWInd[notZeroIndW].ravel()
-            
-            print("BU shape")
-            print(BU.shape)
-            print("BV shape")
-            print(BV.shape)
-            print("BW shape")
-            print(BW.shape)
-            
+            # best-fit linear plane
+            UFit = UOrg[:, :, iIter, -1].copy()
+            VFit = VOrg[:, :, iIter, -1].copy()
+            WFit = WOrg[:, :, iIter, -1].copy()
                 
-            DU = numpy.c_[X[notZeroIndU].ravel(), Y[notZeroIndU].ravel(), XY[notZeroIndU].ravel(), X2[notZeroIndU].ravel() , Y2[notZeroIndU].ravel() , numpy.ones(len(BU))]
-            DV = numpy.c_[X[notZeroIndV].ravel(), Y[notZeroIndV].ravel(), XY[notZeroIndV].ravel(), X2[notZeroIndV].ravel() , Y2[notZeroIndV].ravel() , numpy.ones(len(BV))]
-            DW = numpy.c_[X[notZeroIndW].ravel(), Y[notZeroIndW].ravel(), XY[notZeroIndW].ravel(), X2[notZeroIndW].ravel() , Y2[notZeroIndW].ravel() , numpy.ones(len(BW))]
+            UFit = UFit.ravel()
+            VFit = VFit.ravel()
+            WFit = WFit.ravel()
+                
+            magDataSelected = magData[:,:,iIter].copy()
+                
+            USTD[1:(UOrg.shape[0]-1),1:(UOrg.shape[1]-1)] = numpy.std(rolling_window(UOrg[:,:,iIter,:], (3,3,0), toend=False), axis=(4,3,1))
+            VSTD[1:(VOrg.shape[0]-1),1:(VOrg.shape[1]-1)] = numpy.std(rolling_window(VOrg[:,:,iIter,:], (3,3,0), toend=False), axis=(4,3,1))
+            WSTD[1:(WOrg.shape[0]-1),1:(WOrg.shape[1]-1)] = numpy.std(rolling_window(WOrg[:,:,iIter,:], (3,3,0), toend=False), axis=(4,3,1))
 
-            print("DU shape")
-            print(DU.shape)
-            print("DV shape")
-            print(DV.shape)
-            print("DW shape")
-            print(DW.shape)
+            USTDSelectInd = numpy.where(USTD > (eddyCurrentThreshold/100) * USTD.max())
+            VSTDSelectInd = numpy.where(VSTD > (eddyCurrentThreshold/100) * VSTD.max())
+            WSTDSelectInd = numpy.where(WSTD > (eddyCurrentThreshold/100) * WSTD.max())
+    
+            USTDSelected = USTD[USTDSelectInd].copy()
+            VSTDSelected = VSTD[VSTDSelectInd].copy()
+            WSTDSelected = WSTD[WSTDSelectInd].copy()
+            
+            with numpy.errstate(invalid='ignore'):
+                 weightU = magDataSelected[USTDSelectInd] / (USTDSelected) ** STDPower
+                 weightV = magDataSelected[VSTDSelectInd] / (VSTDSelected) ** STDPower
+                 weightW = magDataSelected[WSTDSelectInd] / (WSTDSelected) ** STDPower
+           
+            weightU[numpy.isnan(weightU)] = 0
+            weightV[numpy.isnan(weightV)] = 0
+            weightW[numpy.isnan(weightW)] = 0
+            weightU[numpy.isinf(weightU)] = 0
+            weightV[numpy.isinf(weightV)] = 0
+            weightW[numpy.isinf(weightW)] = 0
+    
+                     
+            notZeroIndU = numpy.where(weightU > 0)
+            notZeroIndV = numpy.where(weightV > 0)
+            notZeroIndW = numpy.where(weightW > 0)
+                
+            BU = UFit[notZeroIndU]
+            BV = VFit[notZeroIndV]
+            BW = WFit[notZeroIndW]
+                    
+            Xravel = X.ravel()
+            Yravel = Y.ravel()
+            XYravel = XY.ravel()
+            X2ravel = X2.ravel()
+            Y2ravel = Y2.ravel()
+                
+            DU = numpy.c_[Xravel[notZeroIndU], Yravel[notZeroIndU], XYravel[notZeroIndU], X2ravel[notZeroIndU] , Y2ravel[notZeroIndU] , numpy.ones(len(BU))]
+            DV = numpy.c_[Xravel[notZeroIndV], Yravel[notZeroIndV], XYravel[notZeroIndV], X2ravel[notZeroIndV] , Y2ravel[notZeroIndV] , numpy.ones(len(BV))]
+            DW = numpy.c_[Xravel[notZeroIndW], Yravel[notZeroIndW], XYravel[notZeroIndW], X2ravel[notZeroIndW] , Y2ravel[notZeroIndW] , numpy.ones(len(BW))]
                 
             CU,_,_,_ = scipy.linalg.lstsq(DU, BU)    # coefficients
             CV,_,_,_ = scipy.linalg.lstsq(DV, BV)    # coefficients
