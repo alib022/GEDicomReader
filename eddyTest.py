@@ -1,4 +1,4 @@
-import numpy, eddyNoise
+import numpy, eddyNoise, saveVTK
 
 
 
@@ -18,4 +18,10 @@ WOrg = flowData[:,:,:,2,:]
 flowCorrectedNoise = eddyNoise.randNoise( UOrg, VOrg, WOrg, 30, 0)
 
 
-flowCorrectedEddy = eddyNoise.eddyCurrentCorrection(flowCorrectedNoise[:,:,:,0,:], flowCorrectedNoise[:,:,:,1,:], flowCorrectedNoise[:,:,:,2,:], magData)
+flowCorrectedEddy = eddyNoise.eddyCurrentCorrection(flowCorrectedNoise[:,:,:,0,:], flowCorrectedNoise[:,:,:,1,:], flowCorrectedNoise[:,:,:,2,:], magData, STDPower=2,  eddyCurrentThreshold=15)
+
+PixelSize = numpy.array([0.70, 0.70, 0.4])
+magSize = magData.shape
+totalNodes = magSize[0] * magSize[1] * magSize[2]
+
+saveVTK.saveVTK(magData, flowCorrectedEddy,  PixelSize, totalNodes, "EddyTest/")

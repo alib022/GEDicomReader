@@ -106,17 +106,17 @@ def readGEFlow(inputFlags, PatientDataStruc):
           
         if (inputFlags.eddycurrent is not None and inputFlags.randomnoise is not None):
             
-            flowCorrectedtemp2 = eddyNoise.randNoiseV2(magDataTemp, UOrg, VOrg, WOrg, int(inputFlags.randomnoise)/100, 0)            
-            flowCorrectedtemp = eddyNoise.randNoise(UOrg, VOrg, WOrg, int(inputFlags.randomnoise)/100, 0)
-            flowCorrected = eddyNoise.eddyCurrentCorrection(flowCorrectedtemp[:,:,:,0], flowCorrectedtemp[:,:,:,1], flowCorrectedtemp[:,:,:,2], inputFlags.eddythreshold, inputFlags.eddyplane, 0, 0, 1, 20)
+#            flowCorrectedtemp2 = eddyNoise.randNoiseV2(magDataTemp, UOrg, VOrg, WOrg, int(inputFlags.randomnoise), 0)            
+            flowCorrectedtemp = eddyNoise.randNoise(UOrg, VOrg, WOrg, inputFlags.randomnoise)
+            flowCorrected = eddyNoise.eddyCurrentCorrection(flowCorrectedtemp[:,:,:,0], flowCorrectedtemp[:,:,:,1], flowCorrectedtemp[:,:,:,2], magDataTemp, inputFlags.eddythreshold, inputFlags.eddyplane, STDPower=2, plotEddyPlane=0, plotPlain=20)
 
             
         
         if (inputFlags.eddythreshold is not None and inputFlags.randomnoise is None):
-            flowCorrected = eddyNoise.eddyCurrentCorrection(UOrg, VOrg, WOrg, inputFlags.eddythreshold, inputFlags.eddyplane, 0, 0, 1, 20)
+            flowCorrected = eddyNoise.eddyCurrentCorrection(UOrg, VOrg, WOrg, magDataTemp, inputFlags.eddythreshold, inputFlags.eddyplane, STDPower=2, plotEddyPlane=0, plotPlain=20)
 
         if (inputFlags.randomnoise is not None and inputFlags.eddythreshold is None):
-            flowCorrected = eddyNoise.randNoise(UOrg, VOrg, WOrg, int(inputFlags.randomnoise)/100, 0)
+            flowCorrected = eddyNoise.randNoise(UOrg, VOrg, WOrg, inputFlags.randomnoise)
             
             
         if (inputFlags.eddythreshold is None and inputFlags.randomnoise is None):
