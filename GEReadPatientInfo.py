@@ -3,7 +3,7 @@ from clint.textui import colored
 
 
 def readPatientInfo(FolderPath, cmra, tof):
-    Version = "0.0.2"
+    Version = "0.1"
     MagPathStr = str(FolderPath)
     foldersList = [os.path.join(MagPathStr,o) for o in os.listdir(MagPathStr) if os.path.isdir(os.path.join(MagPathStr,o))]
  
