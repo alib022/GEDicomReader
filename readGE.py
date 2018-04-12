@@ -12,6 +12,7 @@ def main():
     parser = argparse.ArgumentParser(description="GE 4D Flow DICOM reader developed by Ali Bakhshinejad. contact: ali.bakhshinejad@gmail.com")
 
     parser.add_argument("-i", "--input", help="Path to the main folder.")
+#    parser.add_argument("-m", "--meter", action="store_true", help="Convert dimentions to meters.")
     parser.add_argument("-v", "--velocityorder", help="The order of reading velocity files, default value is [1,0,2] which reresents [y,x,z]")
     parser.add_argument("-si", "--velocitysign", help="Sign for each velocity component, default value is [1,1,-1]")
     parser.add_argument("-e", "--eddycurrent", action="store_true", help="Activating Eddy current correction function")

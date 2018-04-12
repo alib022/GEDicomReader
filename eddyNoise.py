@@ -46,9 +46,6 @@ def eddyCurrentCorrection(UOrg, VOrg, WOrg, magData, eddyCurrentThreshold=15, ed
                 VFit = VOrg[:, :, iIter, -1].copy()
                 WFit = WOrg[:, :, iIter, -1].copy()
                 
-                UFit = UFit.ravel()
-                VFit = VFit.ravel()
-                WFit = WFit.ravel()
                 
                 magDataSelected = magData[:,:,iIter].copy()
                 
@@ -56,19 +53,19 @@ def eddyCurrentCorrection(UOrg, VOrg, WOrg, magData, eddyCurrentThreshold=15, ed
                 VSTD[1:(VOrg.shape[0]-1),1:(VOrg.shape[1]-1)] = numpy.std(rolling_window(VOrg[:,:,iIter,:], (3,3,0), toend=False), axis=(4,3,1))
                 WSTD[1:(WOrg.shape[0]-1),1:(WOrg.shape[1]-1)] = numpy.std(rolling_window(WOrg[:,:,iIter,:], (3,3,0), toend=False), axis=(4,3,1))
 
-                USTDSelectInd = numpy.where(USTD > (eddyCurrentThreshold/100) * USTD.max())
-                VSTDSelectInd = numpy.where(VSTD > (eddyCurrentThreshold/100) * VSTD.max())
-                WSTDSelectInd = numpy.where(WSTD > (eddyCurrentThreshold/100) * WSTD.max())
+                USTDSelectInd = numpy.where(USTD > (eddyCurrentThreshold/100) * USTD.max(), USTD, 0)
+                VSTDSelectInd = numpy.where(VSTD > (eddyCurrentThreshold/100) * VSTD.max(), VSTD, 0)
+                WSTDSelectInd = numpy.where(WSTD > (eddyCurrentThreshold/100) * WSTD.max(), WSTD, 0)
     
                 USTDSelected = USTD[USTDSelectInd].copy()
                 VSTDSelected = VSTD[VSTDSelectInd].copy()
                 WSTDSelected = WSTD[WSTDSelectInd].copy()
             
                 with numpy.errstate(invalid='ignore'):
-                      weightU = magDataSelected[USTDSelectInd] / (USTDSelected) ** STDPower
-                      weightV = magDataSelected[VSTDSelectInd] / (VSTDSelected) ** STDPower
-                      weightW = magDataSelected[WSTDSelectInd] / (WSTDSelected) ** STDPower
-            
+                    weightU = magDataSelected / (USTD) ** STDPower
+                    weightV = magDataSelected / (VSTD) ** STDPower
+                    weightW = magDataSelected / (WSTD) ** STDPower
+           
                 weightU[numpy.isnan(weightU)] = 0
                 weightV[numpy.isnan(weightV)] = 0
                 weightW[numpy.isnan(weightW)] = 0
@@ -77,21 +74,17 @@ def eddyCurrentCorrection(UOrg, VOrg, WOrg, magData, eddyCurrentThreshold=15, ed
                 weightW[numpy.isinf(weightW)] = 0
     
                      
-                notZeroIndU = numpy.where(weightU > 0)
-                notZeroIndV = numpy.where(weightV > 0)
-                notZeroIndW = numpy.where(weightW > 0)
+                notZeroIndU = numpy.where(numpy.logical_and(weightU > 0, USTDSelectInd))
+                notZeroIndV = numpy.where(numpy.logical_and(weightV > 0, VSTDSelectInd))
+                notZeroIndW = numpy.where(numpy.logical_and(weightW > 0, WSTDSelectInd))
                 
                 BU = UFit[notZeroIndU]
                 BV = VFit[notZeroIndV]
-                BW = WFit[notZeroIndW]
-                    
-                Xravel = X.ravel()
-                Yravel = Y.ravel()
+                BW = WFit[notZeroIndW]              
                 
-                
-                DU = numpy.c_[Xravel[notZeroIndU], Yravel[notZeroIndU], numpy.ones(len(BU))]
-                DV = numpy.c_[Xravel[notZeroIndV], Yravel[notZeroIndV], numpy.ones(len(BV))]
-                DW = numpy.c_[Xravel[notZeroIndW], Yravel[notZeroIndW], numpy.ones(len(BW))]
+                DU = numpy.c_[X[notZeroIndU], Y[notZeroIndU], numpy.ones(len(BU))]
+                DV = numpy.c_[X[notZeroIndV], Y[notZeroIndV], numpy.ones(len(BV))]
+                DW = numpy.c_[X[notZeroIndW], Y[notZeroIndW], numpy.ones(len(BW))]
                 
                 WU = numpy.sqrt(weightU[notZeroIndU])
                 WV = numpy.sqrt(weightV[notZeroIndV])
@@ -126,28 +119,22 @@ def eddyCurrentCorrection(UOrg, VOrg, WOrg, magData, eddyCurrentThreshold=15, ed
             VFit = VOrg[:, :, iIter, -1].copy()
             WFit = WOrg[:, :, iIter, -1].copy()
                 
-            UFit = UFit.ravel()
-            VFit = VFit.ravel()
-            WFit = WFit.ravel()
-                
             magDataSelected = magData[:,:,iIter].copy()
                 
             USTD[1:(UOrg.shape[0]-1),1:(UOrg.shape[1]-1)] = numpy.std(rolling_window(UOrg[:,:,iIter,:], (3,3,0), toend=False), axis=(4,3,1))
             VSTD[1:(VOrg.shape[0]-1),1:(VOrg.shape[1]-1)] = numpy.std(rolling_window(VOrg[:,:,iIter,:], (3,3,0), toend=False), axis=(4,3,1))
             WSTD[1:(WOrg.shape[0]-1),1:(WOrg.shape[1]-1)] = numpy.std(rolling_window(WOrg[:,:,iIter,:], (3,3,0), toend=False), axis=(4,3,1))
 
-            USTDSelectInd = numpy.where(USTD > (eddyCurrentThreshold/100) * USTD.max())
-            VSTDSelectInd = numpy.where(VSTD > (eddyCurrentThreshold/100) * VSTD.max())
-            WSTDSelectInd = numpy.where(WSTD > (eddyCurrentThreshold/100) * WSTD.max())
+
+            USTDSelectInd = numpy.where(USTD > (eddyCurrentThreshold/100) * USTD.max(), USTD, 0)
+            VSTDSelectInd = numpy.where(VSTD > (eddyCurrentThreshold/100) * VSTD.max(), VSTD, 0)
+            WSTDSelectInd = numpy.where(WSTD > (eddyCurrentThreshold/100) * WSTD.max(), WSTD, 0)
     
-            USTDSelected = USTD[USTDSelectInd].copy()
-            VSTDSelected = VSTD[VSTDSelectInd].copy()
-            WSTDSelected = WSTD[WSTDSelectInd].copy()
             
             with numpy.errstate(invalid='ignore'):
-                 weightU = magDataSelected[USTDSelectInd] / (USTDSelected) ** STDPower
-                 weightV = magDataSelected[VSTDSelectInd] / (VSTDSelected) ** STDPower
-                 weightW = magDataSelected[WSTDSelectInd] / (WSTDSelected) ** STDPower
+                 weightU = magDataSelected / (USTD) ** STDPower
+                 weightV = magDataSelected / (VSTD) ** STDPower
+                 weightW = magDataSelected / (WSTD) ** STDPower
            
             weightU[numpy.isnan(weightU)] = 0
             weightV[numpy.isnan(weightV)] = 0
@@ -157,27 +144,34 @@ def eddyCurrentCorrection(UOrg, VOrg, WOrg, magData, eddyCurrentThreshold=15, ed
             weightW[numpy.isinf(weightW)] = 0
     
                      
-            notZeroIndU = numpy.where(weightU > 0)
-            notZeroIndV = numpy.where(weightV > 0)
-            notZeroIndW = numpy.where(weightW > 0)
+            notZeroIndU = numpy.where(numpy.logical_and(weightU > 0, USTDSelectInd))
+            notZeroIndV = numpy.where(numpy.logical_and(weightV > 0, VSTDSelectInd))
+            notZeroIndW = numpy.where(numpy.logical_and(weightW > 0, WSTDSelectInd))
                 
             BU = UFit[notZeroIndU]
             BV = VFit[notZeroIndV]
             BW = WFit[notZeroIndW]
                     
-            Xravel = X.ravel()
-            Yravel = Y.ravel()
-            XYravel = XY.ravel()
-            X2ravel = X2.ravel()
-            Y2ravel = Y2.ravel()
                 
-            DU = numpy.c_[Xravel[notZeroIndU], Yravel[notZeroIndU], XYravel[notZeroIndU], X2ravel[notZeroIndU] , Y2ravel[notZeroIndU] , numpy.ones(len(BU))]
-            DV = numpy.c_[Xravel[notZeroIndV], Yravel[notZeroIndV], XYravel[notZeroIndV], X2ravel[notZeroIndV] , Y2ravel[notZeroIndV] , numpy.ones(len(BV))]
-            DW = numpy.c_[Xravel[notZeroIndW], Yravel[notZeroIndW], XYravel[notZeroIndW], X2ravel[notZeroIndW] , Y2ravel[notZeroIndW] , numpy.ones(len(BW))]
+            DU = numpy.c_[X[notZeroIndU], Y[notZeroIndU], XY[notZeroIndU], X2[notZeroIndU] , Y2[notZeroIndU] , numpy.ones(len(BU))]
+            DV = numpy.c_[X[notZeroIndV], Y[notZeroIndV], XY[notZeroIndV], X2[notZeroIndV] , Y2[notZeroIndV] , numpy.ones(len(BV))]
+            DW = numpy.c_[X[notZeroIndW], Y[notZeroIndW], XY[notZeroIndW], X2[notZeroIndW] , Y2[notZeroIndW] , numpy.ones(len(BW))]
+
+            WU = numpy.sqrt(weightU[notZeroIndU])
+            WV = numpy.sqrt(weightV[notZeroIndV])
+            WW = numpy.sqrt(weightW[notZeroIndW])
+                            
+            DUW = (WU * DU.T).T
+            DVW = (WV * DV.T).T
+            DWW = (WW * DW.T).T
                 
-            CU,_,_,_ = scipy.linalg.lstsq(DU, BU)    # coefficients
-            CV,_,_,_ = scipy.linalg.lstsq(DV, BV)    # coefficients
-            CW,_,_,_ = scipy.linalg.lstsq(DW, BW)
+            BUW = BU * WU
+            BVW = BV * WV
+            BWW = BW * WW
+                
+            CU,_,_,_ = scipy.linalg.lstsq(DUW, BUW)    # coefficients
+            CV,_,_,_ = scipy.linalg.lstsq(DVW, BVW)    # coefficients
+            CW,_,_,_ = scipy.linalg.lstsq(DWW, BWW)
         
             # evaluate it on grid
             plainU[:,:,iIter] = CU[0]*X + CU[1]*Y + CU[2]*XY + CU[3]*X2 + CU[4]*Y2 + CU[5]
@@ -188,12 +182,15 @@ def eddyCurrentCorrection(UOrg, VOrg, WOrg, magData, eddyCurrentThreshold=15, ed
     
     if plotEddyPlane:
         fig = plt.figure()
-        ax = fig.add_subplot(111, projection='3d')
+        ax = fig.add_subplot(111, projection='3d') 
         # Plot the surface.
         ax.plot_surface(X, Y, plainU[:,:,plotPlain], linewidth=0, antialiased=False)
         #fig.colorbar(surf, shrink=0.5, aspect=5)
 
         plt.show()
+        numpy.save("PlaneU", plainU)
+        numpy.save("PlaneV", plainV)
+        numpy.save("PlaneW", plainW)
 
    
 
@@ -203,7 +200,11 @@ def eddyCurrentCorrection(UOrg, VOrg, WOrg, magData, eddyCurrentThreshold=15, ed
         flowCorrected[:, :, :,0, k] = UOrg[:,:,:,k] - plainU
         flowCorrected[:, :, :,1, k] = VOrg[:,:,:,k] - plainV
         flowCorrected[:, :, :,2, k] = WOrg[:,:,:,k] - plainW
-    
+
+    maskT = weightU * weightV * weightW    
+    mask = numpy.where(maskT > 0)
+    flowCorrected[mask,:] = 0
+    print("end of correction")
     
     return flowCorrected
 
