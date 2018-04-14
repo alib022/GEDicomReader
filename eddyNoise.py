@@ -188,9 +188,9 @@ def eddyCurrentCorrection(UOrg, VOrg, WOrg, magData, eddyCurrentThreshold=15, ed
         #fig.colorbar(surf, shrink=0.5, aspect=5)
 
         plt.show()
-        numpy.save("PlaneU", plainU)
-        numpy.save("PlaneV", plainV)
-        numpy.save("PlaneW", plainW)
+    numpy.save("PlaneU", plainU)
+    numpy.save("PlaneV", plainV)
+    numpy.save("PlaneW", plainW)
 
    
 
@@ -202,7 +202,7 @@ def eddyCurrentCorrection(UOrg, VOrg, WOrg, magData, eddyCurrentThreshold=15, ed
         flowCorrected[:, :, :,2, k] = WOrg[:,:,:,k] - plainW
 
     maskT = weightU * weightV * weightW    
-    mask = numpy.where(maskT > 0)
+    mask = numpy.where(USTDSelectInd == True and VSTDSelectInd == True and WSTDSelectInd == True, USTDSelectInd, 0)
     flowCorrected[mask,:] = 0
     print("end of correction")
     
