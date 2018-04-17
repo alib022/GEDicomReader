@@ -15,10 +15,10 @@ VOrg = flowData[:,:,:,1,:]
 WOrg = flowData[:,:,:,2,:]
 
 
-flowCorrectedNoise = eddyNoise.randNoise( UOrg, VOrg, WOrg, 30, 0)
+flowCorrectedNoise = eddyNoise.randNoise( UOrg, VOrg, WOrg, 25)
 
 
-flowCorrectedEddy = eddyNoise.eddyCurrentCorrection(flowCorrectedNoise[:,:,:,0,:], flowCorrectedNoise[:,:,:,1,:], flowCorrectedNoise[:,:,:,2,:], magData, STDPower=2,  eddyCurrentThreshold=15)
+flowCorrectedEddy = eddyNoise.eddyCurrentCorrection(flowCorrectedNoise[:,:,:,0,:], flowCorrectedNoise[:,:,:,1,:], flowCorrectedNoise[:,:,:,2,:], magData,15, 5, STDPower=2)
 
 PixelSize = numpy.array([0.70, 0.70, 0.4])
 magSize = magData.shape
