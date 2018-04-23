@@ -15,7 +15,11 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 
 def eddyCurrentCorrection(inputFlags, UOrg, VOrg, WOrg, magData, eddyCurrentThreshold=15, eddyOrder=5, STDPower=2,   plotEddyPlane=1, plotPlain=20):
 
-    masV = inputFlags.n0v / 100
+    if inputFlags.n0v is not None:    
+        masV = inputFlags.n0v / 100
+    else:
+        masV = 1
+
     USTD = numpy.zeros((UOrg.shape[0],UOrg.shape[1]))
     VSTD = numpy.zeros(USTD.shape)
     WSTD = numpy.zeros(USTD.shape)
