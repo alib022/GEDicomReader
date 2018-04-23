@@ -13,9 +13,9 @@ from mpl_toolkits.mplot3d import Axes3D
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
-def eddyCurrentCorrection(UOrg, VOrg, WOrg, magData, eddyCurrentThreshold=15, eddyOrder=5, STDPower=2,   plotEddyPlane=1, plotPlain=20):
+def eddyCurrentCorrection(inputFlags, UOrg, VOrg, WOrg, magData, eddyCurrentThreshold=15, eddyOrder=5, STDPower=2,   plotEddyPlane=1, plotPlain=20):
 
-
+    masV = inputFlags.n0v / 100
     USTD = numpy.zeros((UOrg.shape[0],UOrg.shape[1]))
     VSTD = numpy.zeros(USTD.shape)
     WSTD = numpy.zeros(USTD.shape)
@@ -84,13 +84,13 @@ def eddyCurrentCorrection(UOrg, VOrg, WOrg, magData, eddyCurrentThreshold=15, ed
 
             maskT = weightU * weightV * weightW    
 
-            mask[:,:,iIter] = numpy.asarray(numpy.logical_and(maskT > 0, UMask[:,:,iIter] < (0.1 * UMask[:,:,iIter].max()) ))
+            mask[:,:,iIter] = numpy.asarray(numpy.logical_and(maskT > 0, UMask[:,:,iIter] < (masV * UMask[:,:,iIter].max()) ))
 
     
                      
-            notZeroIndU = numpy.where(numpy.logical_and(numpy.logical_and(weightU > 0, USTDSelectInd), UMask[:,:,iIter] < (0.1 * UMask[:,:,iIter].max())))
-            notZeroIndV = numpy.where(numpy.logical_and(numpy.logical_and(weightV > 0, VSTDSelectInd), UMask[:,:,iIter] < (0.1 * UMask[:,:,iIter].max())))
-            notZeroIndW = numpy.where(numpy.logical_and(numpy.logical_and(weightW > 0, WSTDSelectInd), UMask[:,:,iIter] < (0.1 * UMask[:,:,iIter].max())))
+            notZeroIndU = numpy.where(numpy.logical_and(numpy.logical_and(weightU > 0, USTDSelectInd), UMask[:,:,iIter] < (masV * UMask[:,:,iIter].max())))
+            notZeroIndV = numpy.where(numpy.logical_and(numpy.logical_and(weightV > 0, VSTDSelectInd), UMask[:,:,iIter] < (masV * UMask[:,:,iIter].max())))
+            notZeroIndW = numpy.where(numpy.logical_and(numpy.logical_and(weightW > 0, WSTDSelectInd), UMask[:,:,iIter] < (masV * UMask[:,:,iIter].max())))
                 
             BU = UFit[notZeroIndU]
             BV = VFit[notZeroIndV]
@@ -159,13 +159,13 @@ def eddyCurrentCorrection(UOrg, VOrg, WOrg, magData, eddyCurrentThreshold=15, ed
 
             maskT = weightU * weightV * weightW    
 
-            mask[:,:,iIter] = numpy.asarray(numpy.logical_and(maskT > 0, UMask[:,:,iIter] < (0.1 * UMask[:,:,iIter].max()) ))
+            mask[:,:,iIter] = numpy.asarray(numpy.logical_and(maskT > 0, UMask[:,:,iIter] < (masV * UMask[:,:,iIter].max()) ))
 
     
                      
-            notZeroIndU = numpy.where(numpy.logical_and(numpy.logical_and(weightU > 0, USTDSelectInd), UMask[:,:,iIter] < (0.1 * UMask[:,:,iIter].max())))
-            notZeroIndV = numpy.where(numpy.logical_and(numpy.logical_and(weightV > 0, VSTDSelectInd), UMask[:,:,iIter] < (0.1 * UMask[:,:,iIter].max())))
-            notZeroIndW = numpy.where(numpy.logical_and(numpy.logical_and(weightW > 0, WSTDSelectInd), UMask[:,:,iIter] < (0.1 * UMask[:,:,iIter].max())))
+            notZeroIndU = numpy.where(numpy.logical_and(numpy.logical_and(weightU > 0, USTDSelectInd), UMask[:,:,iIter] < (masV * UMask[:,:,iIter].max())))
+            notZeroIndV = numpy.where(numpy.logical_and(numpy.logical_and(weightV > 0, VSTDSelectInd), UMask[:,:,iIter] < (masV * UMask[:,:,iIter].max())))
+            notZeroIndW = numpy.where(numpy.logical_and(numpy.logical_and(weightW > 0, WSTDSelectInd), UMask[:,:,iIter] < (masV * UMask[:,:,iIter].max())))
                 
             BU = UFit[notZeroIndU]
             BV = VFit[notZeroIndV]
@@ -233,13 +233,13 @@ def eddyCurrentCorrection(UOrg, VOrg, WOrg, magData, eddyCurrentThreshold=15, ed
 
             maskT = weightU * weightV * weightW    
 
-            mask[:,:,iIter] = numpy.asarray(numpy.logical_and(maskT > 0, UMask[:,:,iIter] < (0.1 * UMask[:,:,iIter].max()) ))
+            mask[:,:,iIter] = numpy.asarray(numpy.logical_and(maskT > 0, UMask[:,:,iIter] < (masV * UMask[:,:,iIter].max()) ))
 
     
                      
-            notZeroIndU = numpy.where(numpy.logical_and(numpy.logical_and(weightU > 0, USTDSelectInd), UMask[:,:,iIter] < (0.03 * UMask[:,:,iIter].max())))
-            notZeroIndV = numpy.where(numpy.logical_and(numpy.logical_and(weightV > 0, VSTDSelectInd), UMask[:,:,iIter] < (0.03 * UMask[:,:,iIter].max())))
-            notZeroIndW = numpy.where(numpy.logical_and(numpy.logical_and(weightW > 0, WSTDSelectInd), UMask[:,:,iIter] < (0.03 * UMask[:,:,iIter].max())))
+            notZeroIndU = numpy.where(numpy.logical_and(numpy.logical_and(weightU > 0, USTDSelectInd), UMask[:,:,iIter] < (masV * UMask[:,:,iIter].max())))
+            notZeroIndV = numpy.where(numpy.logical_and(numpy.logical_and(weightV > 0, VSTDSelectInd), UMask[:,:,iIter] < (masV * UMask[:,:,iIter].max())))
+            notZeroIndW = numpy.where(numpy.logical_and(numpy.logical_and(weightW > 0, WSTDSelectInd), UMask[:,:,iIter] < (masV * UMask[:,:,iIter].max())))
                 
             BU = UFit[notZeroIndU]
             BV = VFit[notZeroIndV]
@@ -292,7 +292,8 @@ def eddyCurrentCorrection(UOrg, VOrg, WOrg, magData, eddyCurrentThreshold=15, ed
         flowCorrected[:, :, :,1, k] = VOrg[:,:,:,k] - plainV
         flowCorrected[:, :, :,2, k] = WOrg[:,:,:,k] - plainW
 
-    flowCorrected[mask,:] = 0
+    if inputFlags.n0:    
+        flowCorrected[mask,:] = 0
     #print("end of correction")
     
     return flowCorrected

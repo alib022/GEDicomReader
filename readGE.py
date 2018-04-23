@@ -26,6 +26,8 @@ def main():
 
     parser.add_argument("--cmra", action="store_true", help="Read cMRA dataset, (No Flow Data).")
     parser.add_argument("--tof", action="store_true", help="Read Time Of Flght (TOF) database.")
+    parser.add_argument("--n0", action="store_true", help="Zero down remainig of static tissue.")
+    parser.add_argument("--n0v", type=int, help="Value for zero downing.")
 
     inputFlags = parser.parse_args()
     
