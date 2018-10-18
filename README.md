@@ -12,4 +12,5 @@ In case you might have any question or even worst you find a bug in the code ple
 To see the defined flags use:
 python readGE.py -h
 
+Note: While this code is fully functional, however, it's no where close to full production code. There is no guarantees for this code! Use by your own risks.
 Enjoy!
