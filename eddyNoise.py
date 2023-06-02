@@ -1,4 +1,4 @@
-import scipy.io, numpy, saveVTK, warnings
+import scipy, numpy, saveVTK, warnings
 #from clint.textui import colored
 #from vtk.util import numpy_support
 #from scipy.ndimage.filters import uniform_filter
