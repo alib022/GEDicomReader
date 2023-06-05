@@ -1,4 +1,4 @@
-import pydicom,os, glob, scipy.io, numpy, vtk, sys, saveVTK, math, eddyNoise
+import pydicom,os, glob, numpy, vtk, sys, saveVTK, math, eddyNoise, hdf5storage
 from clint.textui import colored
 from vtk.util import numpy_support
 
@@ -77,7 +77,7 @@ def readGEFlow(inputFlags, PatientDataStruc):
                     
                 magDataTemp = ReadData.mean(3)
                 if inputFlags.mat:
-                    scipy.io.savemat(inputFlags.output + "/mag.mat", mdict={'magDataTemp': magDataTemp})
+                    hdf5storage.savemat(inputFlags.output + "/mag.mat", {'magDataTemp': magDataTemp}, format='7.3', oned_as='column', store_python_metadata=True)
  #               numpy.save(args.output +"/mag", magDataTemp) 
                 
         else:
@@ -90,7 +90,7 @@ def readGEFlow(inputFlags, PatientDataStruc):
                     flowData[:,:,sliceLocationTemp.index(dsTemp.SliceLocation), folderNumber-1,triggerTimeTemp.index(dsTemp.TriggerTime)]= dsTemp.pixel_array.astype('float')
     
                 if inputFlags.mat:
-                    scipy.io.savemat(inputFlags.output + "/vel.mat", mdict={'flowData': flowData})
+                    hdf5storage.savemat(inputFlags.output + "/vel.mat", {'flowData': flowData}, format='7.3', oned_as='column', store_python_metadata=True)
                 #print(flowData.shape)
 
 
@@ -155,14 +155,9 @@ def readGEFlow(inputFlags, PatientDataStruc):
     
     if inputFlags.mat:
         if inputFlags.segmentation:
-            with open(inputFlags.output + "/FlowData.mat", 'wb') as matlabFile:
-                scipy.io.savemat(matlabFile, mdict={'magnitude': magDataTemp})
-            
+            hdf5storage.savemat(inputFlags.output + '/FlowData.mat', {'magnitude': magDataTemp}, format='7.3', oned_as='column', store_python_metadata=True)
         else:
-            with open(inputFlags.output + "/FlowData.mat", 'wb') as matlabFile:
-                scipy.io.savemat(matlabFile, mdict={'velocity': flowData})
-                scipy.io.savemat(matlabFile, mdict={'magnitude': magDataTemp})
-    
+            hdf5storage.savemat(inputFlags.output + '/FlowData.mat', {'velocity': flowData,'magnitude': magDataTemp}, format='7.3', oned_as='column', store_python_metadata=True)
     
 
 

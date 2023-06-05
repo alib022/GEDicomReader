@@ -3,3 +3,4 @@ scipy
 pydicom
 vtk
 matplotlib
+hdf5storage

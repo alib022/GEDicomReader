@@ -1,4 +1,4 @@
-import pydicom,os, glob, scipy.io, numpy, vtk, sys, datetime, argparse, math, saveVTK
+import pydicom,os, glob, hdf5storage, numpy, vtk, sys, datetime, argparse, math, saveVTK
 from clint.textui import colored
 from vtk.util import numpy_support
 
@@ -74,8 +74,7 @@ def readGETOF(args, PatientDataStruc):
     #print(ReadData.shape)
     magDataTemp = ReadData
     if args.mat:
-       scipy.io.savemat(args.output + "/TOF.mat", mdict={'TOF': magDataTemp})
-            
+       hdf5storage.savemat(args.output + "/TOF.mat", {'TOF': magDataTemp}, format='7.3', oned_as='column', store_python_metadata=True)     
         
         
         
@@ -93,9 +92,7 @@ def readGETOF(args, PatientDataStruc):
         saveVTK.saveVTKSeg(magDataTemp, False,True, pixel_spc, totalNodes, args.output)
         
     if args.mat:
-        with open(args.output + "/TOFData.mat", 'wb') as matlabFile:
-            scipy.io.savemat(matlabFile, mdict={'TOF': magDataTemp})
-            
+        hdf5storage.savemat(args.output + "/TOFData.mat", {'TOF': magDataTemp}, format='7.3', oned_as='column', store_python_metadata=True)
         
     
     
@@ -187,9 +184,7 @@ def readGEcMRA(args, PatientDataStruc):
         saveVTKSeg(magDataTemp,True, False, pixel_spc, totalNodes, args.output)
         
     if args.mat:
-        with open(args.output + "/cMRAData.mat", 'wb') as matlabFile:
-            scipy.io.savemat(matlabFile, mdict={'cMRA': magDataTemp})
-            
+        hdf5storage.savemat(args.output + "/cMRAData.mat", {'cMRA': magDataTemp}, format='7.3', oned_as='column', store_python_metadata=True)   
         
     
     
